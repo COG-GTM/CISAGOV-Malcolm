@@ -836,20 +836,20 @@ if [[ "${CREATE_OS_ARKIME_SESSION_INDEX:-true}" = "true" ]] ; then
                                       -XGET "$OPENSEARCH_URL_TO_USE/_plugins/_notifications/configs/$CONFIG_ID" \
                                       -H "$XSRF_HEADER:true" || true)"
               CURL_OUT=$(get_tmp_output_filename)
-              if [[ "$CONFIG_HTTP_CODE" == "200" ]]; then
-                CHANNEL_PUT_TMP=$(get_tmp_output_filename)
-                jq '{config: .config}' "$i" > "$CHANNEL_PUT_TMP" 2>/dev/null || cp -f "$i" "$CHANNEL_PUT_TMP"
+              CHANNEL_PUT_TMP=$(get_tmp_output_filename)
+              if [[ "$CONFIG_HTTP_CODE" == "200" ]] && \
+                 jq '{config: .config}' "$i" > "$CHANNEL_PUT_TMP" 2>/dev/null && [[ -s "$CHANNEL_PUT_TMP" ]]; then
                 curl "${CURL_CONFIG_PARAMS[@]}" --location --fail-with-body --output "$CURL_OUT" --silent \
                   -XPUT "$OPENSEARCH_URL_TO_USE/_plugins/_notifications/configs/$CONFIG_ID" \
                   -H "$XSRF_HEADER:true" -H 'Content-type:application/json' \
                   -d "@$CHANNEL_PUT_TMP" || ( PrintCurlOutRedacted "$CURL_OUT" && echo )
-              elif [[ -z "$CONFIG_HTTP_CODE" ]] || [[ "$CONFIG_HTTP_CODE" == "404" ]]; then
+              else
+                [[ -n "$CONFIG_HTTP_CODE" ]] && [[ "$CONFIG_HTTP_CODE" != "404" ]] && [[ "$CONFIG_HTTP_CODE" != "200" ]] && \
+                  echo "Warning: unexpected HTTP $CONFIG_HTTP_CODE checking notification config \"$CONFIG_ID\", attempting create" >&2
                 curl "${CURL_CONFIG_PARAMS[@]}" --location --fail-with-body --output "$CURL_OUT" --silent \
                   -XPOST "$OPENSEARCH_URL_TO_USE/_plugins/_notifications/configs" \
                   -H "$XSRF_HEADER:true" -H 'Content-type:application/json' \
                   -d "@$i" || ( PrintCurlOutRedacted "$CURL_OUT" && echo )
-              else
-                echo "Warning: unexpected HTTP $CONFIG_HTTP_CODE checking notification config \"$CONFIG_ID\", skipping import this pass" >&2
               fi
             done
 
