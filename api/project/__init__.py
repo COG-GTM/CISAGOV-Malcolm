@@ -181,12 +181,16 @@ app.config.from_object("project.config.Config")
 
 debugApi = app.config["MALCOLM_API_DEBUG"] == "true"
 
-if malcolm_utils.str2bool(app.config["ROLE_BASED_ACCESS"]) and not (
-    app.config["MALCOLM_API_LOOPBACK_TOKEN"] or ""
-).strip():
+_loopbackToken = (app.config["MALCOLM_API_LOOPBACK_TOKEN"] or "").strip()
+if malcolm_utils.str2bool(app.config["ROLE_BASED_ACCESS"]) and not _loopbackToken:
     warnings.warn(
         "ROLE_BASED_ACCESS is enabled but MALCOLM_API_LOOPBACK_TOKEN is unset: "
         "internal callers (e.g., the OpenSearch Alerting loopback webhook) will be denied by the /event webhook"
+    )
+if _loopbackToken and not _loopbackToken.isascii():
+    warnings.warn(
+        "MALCOLM_API_LOOPBACK_TOKEN contains non-ASCII characters and will never match "
+        "the X-Malcolm-Loopback-Token request header; use an ASCII token (e.g., 'openssl rand -hex 32')"
     )
 
 arkimeHost = app.config["ARKIME_HOST"]

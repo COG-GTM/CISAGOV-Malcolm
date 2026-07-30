@@ -1331,8 +1331,8 @@ services:
     - ./config/ssl.env
     - ./config/upload-common.env
     - ./config/auth-common.env
-    - ./config/dashboards-secret.env
     - ./config/dashboards.env
+    - ./config/dashboards-secret.env
     - ./config/arkime.env
     - ./config/valkey.env
     - ./config/netbox-common.env
