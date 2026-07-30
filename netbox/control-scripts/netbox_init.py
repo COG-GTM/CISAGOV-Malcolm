@@ -34,6 +34,7 @@ MEDIA_ARCHIVE_MAX_RATIO = 200
 def safe_extract_tar(tar, dest_path, archive_size):
     dest_real = os.path.realpath(dest_path)
     total_size = 0
+    members = []
     for member in tar.getmembers():
         if not (member.isreg() or member.isdir()):
             logging.warning(f"skipping non-regular archive member {member.name}")
@@ -44,13 +45,15 @@ def safe_extract_tar(tar, dest_path, archive_size):
         total_size += member.size
         if total_size > MEDIA_ARCHIVE_MAX_TOTAL_SIZE:
             raise ValueError("archive exceeds maximum allowed uncompressed size")
-        if (archive_size > 0) and ((total_size // archive_size) > MEDIA_ARCHIVE_MAX_RATIO):
+        if (archive_size > 0) and (total_size > (archive_size * MEDIA_ARCHIVE_MAX_RATIO)):
             raise ValueError("archive exceeds maximum allowed compression ratio")
-        if hasattr(tarfile, 'data_filter'):
-            tar.extract(member, dest_real, filter='data')
-        else:
+        if not hasattr(tarfile, 'data_filter'):
             member.mode = member.mode & 0o755
-            tar.extract(member, dest_real)
+        members.append(member)
+    if hasattr(tarfile, 'data_filter'):
+        tar.extractall(dest_real, members=members, filter='data')
+    else:
+        tar.extractall(dest_real, members=members)
 
 
 ###################################################################################################
