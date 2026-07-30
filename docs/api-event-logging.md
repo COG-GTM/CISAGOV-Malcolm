@@ -9,7 +9,7 @@ A webhook that accepts alert data to be reindexed into OpenSearch as session rec
 Requests to this endpoint are authorized in one of two ways:
 
 1. Like other Malcolm API endpoints, requests arriving through Malcolm's [nginx proxy](authsetup.md#AuthSetup) are subject to authentication and (if enabled) role-based access control.
-2. "Internal" callers on Malcolm's container network (e.g., the OpenSearch Alerting loopback webhook) must present a shared secret in the `X-Malcolm-Loopback-Token` HTTP header matching the `MALCOLM_API_LOOPBACK_TOKEN` value from [`dashboards.env`](malcolm-config.md#MalcolmConfigEnvVars). If `MALCOLM_API_LOOPBACK_TOKEN` is unset, no internal bypass is allowed.
+2. "Internal" callers on Malcolm's container network (e.g., the OpenSearch Alerting loopback webhook) must present a shared secret in the `X-Malcolm-Loopback-Token` HTTP header matching the `MALCOLM_API_LOOPBACK_TOKEN` value from [`dashboards-secret.env`](malcolm-config.md#MalcolmConfigEnvVars). If `MALCOLM_API_LOOPBACK_TOKEN` is unset, no internal bypass is allowed.
 
 ## How it works
 

@@ -72,6 +72,16 @@ function escape_for_dashboard_markdown() {
     ' "$INPUT_MARKDOWN_FILE"
 }
 
+# print a curl output file with the Malcolm API loopback shared secret (if set) redacted,
+#   as some API error responses echo back the submitted config including header values
+function PrintCurlOutRedacted() {
+  if [[ -n "${MALCOLM_API_LOOPBACK_TOKEN:-}" ]]; then
+    sed "s/$(printf '%s' "$MALCOLM_API_LOOPBACK_TOKEN" | sed 's/[.[\*^$/]/\\&/g')/[REDACTED]/g" "$1"
+  else
+    cat "$1"
+  fi
+}
+
 function DoReplacersInFile() {
   # Index pattern and time field name may be specified via environment variable, but need
   #   to be reflected in dashboards, templates, anomaly detectors, etc.
@@ -813,27 +823,33 @@ if [[ "${CREATE_OS_ARKIME_SESSION_INDEX:-true}" = "true" ]] ; then
                    'walk(if type == "object" then with_entries(select((.value == "MALCOLM_API_LOOPBACK_TOKEN_REPLACER") and ($token == "") | not) | if .value == "MALCOLM_API_LOOPBACK_TOKEN_REPLACER" then .value = $token else . end) else . end)' \
                    "$i" > "$CHANNEL_TMP" 2>/dev/null && [[ -s "$CHANNEL_TMP" ]]; then
                 cp -f "$CHANNEL_TMP" "$i"
+              elif grep -q MALCOLM_API_LOOPBACK_TOKEN_REPLACER "$i" 2>/dev/null; then
+                echo "Warning: failed to substitute MALCOLM_API_LOOPBACK_TOKEN in $(basename "$i"), channel will be imported with the literal placeholder" >&2
               fi
 
               # create the notification channel, or update it in place if one with the same
               #   config_id already exists (so token changes/rotations propagate on existing installations)
               CONFIG_ID="$(jq -r '.config_id // empty' "$i" 2>/dev/null || true)"
+              CONFIG_HTTP_CODE=
+              [[ -n "$CONFIG_ID" ]] && \
+                CONFIG_HTTP_CODE="$(curl "${CURL_CONFIG_PARAMS[@]}" --location --silent --output /dev/null --write-out '%{http_code}' \
+                                      -XGET "$OPENSEARCH_URL_TO_USE/_plugins/_notifications/configs/$CONFIG_ID" \
+                                      -H "$XSRF_HEADER:true" || true)"
               CURL_OUT=$(get_tmp_output_filename)
-              if [[ -n "$CONFIG_ID" ]] && \
-                 curl "${CURL_CONFIG_PARAMS[@]}" --location --fail --silent --output /dev/null \
-                   -XGET "$OPENSEARCH_URL_TO_USE/_plugins/_notifications/configs/$CONFIG_ID" \
-                   -H "$XSRF_HEADER:true"; then
+              if [[ "$CONFIG_HTTP_CODE" == "200" ]]; then
                 CHANNEL_PUT_TMP=$(get_tmp_output_filename)
                 jq '{config: .config}' "$i" > "$CHANNEL_PUT_TMP" 2>/dev/null || cp -f "$i" "$CHANNEL_PUT_TMP"
                 curl "${CURL_CONFIG_PARAMS[@]}" --location --fail-with-body --output "$CURL_OUT" --silent \
                   -XPUT "$OPENSEARCH_URL_TO_USE/_plugins/_notifications/configs/$CONFIG_ID" \
                   -H "$XSRF_HEADER:true" -H 'Content-type:application/json' \
-                  -d "@$CHANNEL_PUT_TMP" || ( cat "$CURL_OUT" && echo )
-              else
+                  -d "@$CHANNEL_PUT_TMP" || ( PrintCurlOutRedacted "$CURL_OUT" && echo )
+              elif [[ -z "$CONFIG_HTTP_CODE" ]] || [[ "$CONFIG_HTTP_CODE" == "404" ]]; then
                 curl "${CURL_CONFIG_PARAMS[@]}" --location --fail-with-body --output "$CURL_OUT" --silent \
                   -XPOST "$OPENSEARCH_URL_TO_USE/_plugins/_notifications/configs" \
                   -H "$XSRF_HEADER:true" -H 'Content-type:application/json' \
-                  -d "@$i" || ( cat "$CURL_OUT" && echo )
+                  -d "@$i" || ( PrintCurlOutRedacted "$CURL_OUT" && echo )
+              else
+                echo "Warning: unexpected HTTP $CONFIG_HTTP_CODE checking notification config \"$CONFIG_ID\", skipping import this pass" >&2
               fi
             done
 
