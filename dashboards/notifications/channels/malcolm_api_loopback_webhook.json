@@ -9,7 +9,8 @@
       "url": "http://api:5000/mapi/alert",
       "method": "POST",
       "header_params": {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "X-Malcolm-Loopback-Token": "MALCOLM_API_LOOPBACK_TOKEN_REPLACER"
       }
     }
   }

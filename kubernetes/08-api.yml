@@ -66,6 +66,8 @@ spec:
               name: auth-common-env
           - configMapRef:
               name: dashboards-env
+          - secretRef:
+              name: dashboards-secret-env
           - configMapRef:
               name: netbox-common-env
           - secretRef:

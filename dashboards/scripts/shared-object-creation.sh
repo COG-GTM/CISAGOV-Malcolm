@@ -72,6 +72,16 @@ function escape_for_dashboard_markdown() {
     ' "$INPUT_MARKDOWN_FILE"
 }
 
+# print a curl output file with the Malcolm API loopback shared secret (if set) redacted,
+#   as some API error responses echo back the submitted config including header values
+function PrintCurlOutRedacted() {
+  if [[ -n "${MALCOLM_API_LOOPBACK_TOKEN:-}" ]]; then
+    sed "s/$(printf '%s' "$MALCOLM_API_LOOPBACK_TOKEN" | sed 's/[.[\*^$/]/\\&/g')/[REDACTED]/g" "$1" 2>/dev/null || true
+  else
+    cat "$1" || true
+  fi
+}
+
 function DoReplacersInFile() {
   # Index pattern and time field name may be specified via environment variable, but need
   #   to be reflected in dashboards, templates, anomaly detectors, etc.
@@ -804,12 +814,44 @@ if [[ "${CREATE_OS_ARKIME_SESSION_INDEX:-true}" = "true" ]] ; then
             # Create notification/alerting objects here
 
             # notification channels
-            for i in /opt/notifications/channels/*.json; do
+            NOTIFICATIONS_IMPORT_DIR="$(mktemp -p "$TMP_WORK_DIR" -d -t notifications-XXXXXX)"
+            rsync -a /opt/notifications/channels/ "$NOTIFICATIONS_IMPORT_DIR"/
+            for i in "${NOTIFICATIONS_IMPORT_DIR}"/*.json; do
+              # inject the Malcolm API loopback shared secret (or drop the header if unset)
+              CHANNEL_TMP=$(get_tmp_output_filename)
+              if jq --arg token "${MALCOLM_API_LOOPBACK_TOKEN:-}" \
+                   'walk(if type == "object" then with_entries(select((.value == "MALCOLM_API_LOOPBACK_TOKEN_REPLACER") and ($token == "") | not) | if .value == "MALCOLM_API_LOOPBACK_TOKEN_REPLACER" then .value = $token else . end) else . end)' \
+                   "$i" > "$CHANNEL_TMP" 2>/dev/null && [[ -s "$CHANNEL_TMP" ]]; then
+                cp -f "$CHANNEL_TMP" "$i"
+              elif grep -q MALCOLM_API_LOOPBACK_TOKEN_REPLACER "$i" 2>/dev/null; then
+                echo "Warning: failed to substitute MALCOLM_API_LOOPBACK_TOKEN in $(basename "$i"), skipping channel import this pass" >&2
+                continue
+              fi
+
+              # create the notification channel, or update it in place if one with the same
+              #   config_id already exists (so token changes/rotations propagate on existing installations)
+              CONFIG_ID="$(jq -r '.config_id // empty' "$i" 2>/dev/null || true)"
+              CONFIG_HTTP_CODE=
+              [[ -n "$CONFIG_ID" ]] && \
+                CONFIG_HTTP_CODE="$(curl "${CURL_CONFIG_PARAMS[@]}" --location --silent --output /dev/null --write-out '%{http_code}' \
+                                      -XGET "$OPENSEARCH_URL_TO_USE/_plugins/_notifications/configs/$CONFIG_ID" \
+                                      -H "$XSRF_HEADER:true" || true)"
               CURL_OUT=$(get_tmp_output_filename)
-              curl "${CURL_CONFIG_PARAMS[@]}" --location --fail-with-body --output "$CURL_OUT" --silent \
-                -XPOST "$OPENSEARCH_URL_TO_USE/_plugins/_notifications/configs" \
-                -H "$XSRF_HEADER:true" -H 'Content-type:application/json' \
-                -d "@$i" || ( cat "$CURL_OUT" && echo )
+              CHANNEL_PUT_TMP=$(get_tmp_output_filename)
+              if [[ "$CONFIG_HTTP_CODE" == "200" ]] && \
+                 jq '{config: .config}' "$i" > "$CHANNEL_PUT_TMP" 2>/dev/null && [[ -s "$CHANNEL_PUT_TMP" ]]; then
+                curl "${CURL_CONFIG_PARAMS[@]}" --location --fail-with-body --output "$CURL_OUT" --silent \
+                  -XPUT "$OPENSEARCH_URL_TO_USE/_plugins/_notifications/configs/$CONFIG_ID" \
+                  -H "$XSRF_HEADER:true" -H 'Content-type:application/json' \
+                  -d "@$CHANNEL_PUT_TMP" || ( PrintCurlOutRedacted "$CURL_OUT" && echo )
+              else
+                [[ -n "$CONFIG_HTTP_CODE" ]] && [[ "$CONFIG_HTTP_CODE" != "404" ]] && [[ "$CONFIG_HTTP_CODE" != "200" ]] && \
+                  echo "Warning: unexpected HTTP $CONFIG_HTTP_CODE checking notification config \"$CONFIG_ID\", attempting create" >&2
+                curl "${CURL_CONFIG_PARAMS[@]}" --location --fail-with-body --output "$CURL_OUT" --silent \
+                  -XPOST "$OPENSEARCH_URL_TO_USE/_plugins/_notifications/configs" \
+                  -H "$XSRF_HEADER:true" -H 'Content-type:application/json' \
+                  -d "@$i" || ( PrintCurlOutRedacted "$CURL_OUT" && echo )
+              fi
             done
 
             # monitors

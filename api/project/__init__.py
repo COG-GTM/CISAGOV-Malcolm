@@ -1,4 +1,5 @@
 import dateparser
+import hmac
 import json
 import malcolm_utils
 import platform
@@ -180,6 +181,18 @@ app.config.from_object("project.config.Config")
 
 debugApi = app.config["MALCOLM_API_DEBUG"] == "true"
 
+_loopbackToken = (app.config["MALCOLM_API_LOOPBACK_TOKEN"] or "").strip()
+if malcolm_utils.str2bool(app.config["ROLE_BASED_ACCESS"]) and not _loopbackToken:
+    warnings.warn(
+        "ROLE_BASED_ACCESS is enabled but MALCOLM_API_LOOPBACK_TOKEN is unset: "
+        "internal callers (e.g., the OpenSearch Alerting loopback webhook) will be denied by the /event webhook"
+    )
+if _loopbackToken and not _loopbackToken.isascii():
+    warnings.warn(
+        "MALCOLM_API_LOOPBACK_TOKEN contains non-ASCII characters and will never match "
+        "the X-Malcolm-Loopback-Token request header; use an ASCII token (e.g., 'openssl rand -hex 32')"
+    )
+
 arkimeHost = app.config["ARKIME_HOST"]
 arkimePort = app.config["ARKIME_PORT"]
 arkimeSsl = malcolm_utils.str2bool(app.config["ARKIME_SSL"])
@@ -276,10 +289,12 @@ def get_request_arguments(req):
 
 
 def is_internal_request(req):
-    # heuristic for determining "internal" calls within Malcolm (e.g., from Dashboards Alerting)
-    host = (req.headers.get("Host") or "").strip().lower()
-    has_xff = "X-Forwarded-For" in req.headers
-    return (host == f"api:{req.environ.get('SERVER_PORT', '5000')}") and (not has_xff)
+    # authenticate "internal" calls within Malcolm (e.g., from Dashboards Alerting) with a
+    #   shared secret (MALCOLM_API_LOOPBACK_TOKEN) presented in the X-Malcolm-Loopback-Token
+    #   header, rather than trusting client-controlled headers like Host or X-Forwarded-For
+    expected = (app.config.get("MALCOLM_API_LOOPBACK_TOKEN") or "").strip()
+    provided = (req.headers.get("X-Malcolm-Loopback-Token") or "").strip()
+    return bool(expected) and bool(provided) and hmac.compare_digest(expected.encode('utf-8'), provided.encode('utf-8'))
 
 
 def translate_roles(req):

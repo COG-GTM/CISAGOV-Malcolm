@@ -93,6 +93,7 @@ services:
     - ./config/netbox-common.env
     - ./config/dashboards.env
     - ./config/dashboards-helper.env
+    - ./config/dashboards-secret.env
     depends_on:
     - opensearch
     volumes:
@@ -1331,6 +1332,7 @@ services:
     - ./config/upload-common.env
     - ./config/auth-common.env
     - ./config/dashboards.env
+    - ./config/dashboards-secret.env
     - ./config/arkime.env
     - ./config/valkey.env
     - ./config/netbox-common.env
