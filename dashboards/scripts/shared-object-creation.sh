@@ -808,14 +808,33 @@ if [[ "${CREATE_OS_ARKIME_SESSION_INDEX:-true}" = "true" ]] ; then
             rsync -a /opt/notifications/channels/ "$NOTIFICATIONS_IMPORT_DIR"/
             for i in "${NOTIFICATIONS_IMPORT_DIR}"/*.json; do
               # inject the Malcolm API loopback shared secret (or drop the header if unset)
-              jq --arg token "${MALCOLM_API_LOOPBACK_TOKEN:-}" \
-                'walk(if type == "object" then with_entries(select((.value == "MALCOLM_API_LOOPBACK_TOKEN_REPLACER") and ($token == "") | not) | if .value == "MALCOLM_API_LOOPBACK_TOKEN_REPLACER" then .value = $token else . end) else . end)' \
-                "$i" | sponge "$i"
+              CHANNEL_TMP=$(get_tmp_output_filename)
+              if jq --arg token "${MALCOLM_API_LOOPBACK_TOKEN:-}" \
+                   'walk(if type == "object" then with_entries(select((.value == "MALCOLM_API_LOOPBACK_TOKEN_REPLACER") and ($token == "") | not) | if .value == "MALCOLM_API_LOOPBACK_TOKEN_REPLACER" then .value = $token else . end) else . end)' \
+                   "$i" > "$CHANNEL_TMP" 2>/dev/null && [[ -s "$CHANNEL_TMP" ]]; then
+                cp -f "$CHANNEL_TMP" "$i"
+              fi
+
+              # create the notification channel, or update it in place if one with the same
+              #   config_id already exists (so token changes/rotations propagate on existing installations)
+              CONFIG_ID="$(jq -r '.config_id // empty' "$i" 2>/dev/null || true)"
               CURL_OUT=$(get_tmp_output_filename)
-              curl "${CURL_CONFIG_PARAMS[@]}" --location --fail-with-body --output "$CURL_OUT" --silent \
-                -XPOST "$OPENSEARCH_URL_TO_USE/_plugins/_notifications/configs" \
-                -H "$XSRF_HEADER:true" -H 'Content-type:application/json' \
-                -d "@$i" || ( cat "$CURL_OUT" && echo )
+              if [[ -n "$CONFIG_ID" ]] && \
+                 curl "${CURL_CONFIG_PARAMS[@]}" --location --fail --silent --output /dev/null \
+                   -XGET "$OPENSEARCH_URL_TO_USE/_plugins/_notifications/configs/$CONFIG_ID" \
+                   -H "$XSRF_HEADER:true"; then
+                CHANNEL_PUT_TMP=$(get_tmp_output_filename)
+                jq '{config: .config}' "$i" > "$CHANNEL_PUT_TMP" 2>/dev/null || cp -f "$i" "$CHANNEL_PUT_TMP"
+                curl "${CURL_CONFIG_PARAMS[@]}" --location --fail-with-body --output "$CURL_OUT" --silent \
+                  -XPUT "$OPENSEARCH_URL_TO_USE/_plugins/_notifications/configs/$CONFIG_ID" \
+                  -H "$XSRF_HEADER:true" -H 'Content-type:application/json' \
+                  -d "@$CHANNEL_PUT_TMP" || ( cat "$CURL_OUT" && echo )
+              else
+                curl "${CURL_CONFIG_PARAMS[@]}" --location --fail-with-body --output "$CURL_OUT" --silent \
+                  -XPOST "$OPENSEARCH_URL_TO_USE/_plugins/_notifications/configs" \
+                  -H "$XSRF_HEADER:true" -H 'Content-type:application/json' \
+                  -d "@$i" || ( cat "$CURL_OUT" && echo )
+              fi
             done
 
             # monitors

@@ -282,7 +282,7 @@ def is_internal_request(req):
     #   header, rather than trusting client-controlled headers like Host or X-Forwarded-For
     expected = (app.config.get("MALCOLM_API_LOOPBACK_TOKEN") or "").strip()
     provided = (req.headers.get("X-Malcolm-Loopback-Token") or "").strip()
-    return bool(expected) and bool(provided) and hmac.compare_digest(expected, provided)
+    return bool(expected) and bool(provided) and hmac.compare_digest(expected.encode('utf-8'), provided.encode('utf-8'))
 
 
 def translate_roles(req):
