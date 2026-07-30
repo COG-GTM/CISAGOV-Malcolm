@@ -804,7 +804,13 @@ if [[ "${CREATE_OS_ARKIME_SESSION_INDEX:-true}" = "true" ]] ; then
             # Create notification/alerting objects here
 
             # notification channels
-            for i in /opt/notifications/channels/*.json; do
+            NOTIFICATIONS_IMPORT_DIR="$(mktemp -p "$TMP_WORK_DIR" -d -t notifications-XXXXXX)"
+            rsync -a /opt/notifications/channels/ "$NOTIFICATIONS_IMPORT_DIR"/
+            for i in "${NOTIFICATIONS_IMPORT_DIR}"/*.json; do
+              # inject the Malcolm API loopback shared secret (or drop the header if unset)
+              jq --arg token "${MALCOLM_API_LOOPBACK_TOKEN:-}" \
+                'walk(if type == "object" then with_entries(select((.value == "MALCOLM_API_LOOPBACK_TOKEN_REPLACER") and ($token == "") | not) | if .value == "MALCOLM_API_LOOPBACK_TOKEN_REPLACER" then .value = $token else . end) else . end)' \
+                "$i" | sponge "$i"
               CURL_OUT=$(get_tmp_output_filename)
               curl "${CURL_CONFIG_PARAMS[@]}" --location --fail-with-body --output "$CURL_OUT" --silent \
                 -XPOST "$OPENSEARCH_URL_TO_USE/_plugins/_notifications/configs" \

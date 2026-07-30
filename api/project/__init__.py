@@ -1,4 +1,5 @@
 import dateparser
+import hmac
 import json
 import malcolm_utils
 import platform
@@ -276,10 +277,12 @@ def get_request_arguments(req):
 
 
 def is_internal_request(req):
-    # heuristic for determining "internal" calls within Malcolm (e.g., from Dashboards Alerting)
-    host = (req.headers.get("Host") or "").strip().lower()
-    has_xff = "X-Forwarded-For" in req.headers
-    return (host == f"api:{req.environ.get('SERVER_PORT', '5000')}") and (not has_xff)
+    # authenticate "internal" calls within Malcolm (e.g., from Dashboards Alerting) with a
+    #   shared secret (MALCOLM_API_LOOPBACK_TOKEN) presented in the X-Malcolm-Loopback-Token
+    #   header, rather than trusting client-controlled headers like Host or X-Forwarded-For
+    expected = (app.config.get("MALCOLM_API_LOOPBACK_TOKEN") or "").strip()
+    provided = (req.headers.get("X-Malcolm-Loopback-Token") or "").strip()
+    return bool(expected) and bool(provided) and hmac.compare_digest(expected, provided)
 
 
 def translate_roles(req):

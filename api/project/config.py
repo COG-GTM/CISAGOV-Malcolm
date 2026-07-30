@@ -27,6 +27,7 @@ class Config(object):
     LOGSTASH_HOST = os.getenv('LOGSTASH_HOST', 'logstash')
     LOGSTASH_LJ_PORT = int(os.getenv('LOGSTASH_LJ_PORT', '5044'))
     MALCOLM_API_DEBUG = os.getenv('MALCOLM_API_DEBUG', 'false')
+    MALCOLM_API_LOOPBACK_TOKEN = os.getenv('MALCOLM_API_LOOPBACK_TOKEN', '')
     MALCOLM_API_PREFIX = os.getenv('MALCOLM_API_PREFIX', 'mapi')
     MALCOLM_NETWORK_INDEX_PATTERN = os.getenv('MALCOLM_NETWORK_INDEX_PATTERN', 'arkime_sessions3-*')
     MALCOLM_NETWORK_INDEX_TIME_FIELD = os.getenv('MALCOLM_NETWORK_INDEX_TIME_FIELD', 'firstPacket')
