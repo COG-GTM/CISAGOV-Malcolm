@@ -76,9 +76,9 @@ function escape_for_dashboard_markdown() {
 #   as some API error responses echo back the submitted config including header values
 function PrintCurlOutRedacted() {
   if [[ -n "${MALCOLM_API_LOOPBACK_TOKEN:-}" ]]; then
-    sed "s/$(printf '%s' "$MALCOLM_API_LOOPBACK_TOKEN" | sed 's/[.[\*^$/]/\\&/g')/[REDACTED]/g" "$1"
+    sed "s/$(printf '%s' "$MALCOLM_API_LOOPBACK_TOKEN" | sed 's/[.[\*^$/]/\\&/g')/[REDACTED]/g" "$1" 2>/dev/null || true
   else
-    cat "$1"
+    cat "$1" || true
   fi
 }
 
@@ -824,7 +824,8 @@ if [[ "${CREATE_OS_ARKIME_SESSION_INDEX:-true}" = "true" ]] ; then
                    "$i" > "$CHANNEL_TMP" 2>/dev/null && [[ -s "$CHANNEL_TMP" ]]; then
                 cp -f "$CHANNEL_TMP" "$i"
               elif grep -q MALCOLM_API_LOOPBACK_TOKEN_REPLACER "$i" 2>/dev/null; then
-                echo "Warning: failed to substitute MALCOLM_API_LOOPBACK_TOKEN in $(basename "$i"), channel will be imported with the literal placeholder" >&2
+                echo "Warning: failed to substitute MALCOLM_API_LOOPBACK_TOKEN in $(basename "$i"), skipping channel import this pass" >&2
+                continue
               fi
 
               # create the notification channel, or update it in place if one with the same
