@@ -1443,12 +1443,20 @@ def run_process(
 
 
 ###################################################################################################
-# execute a shell process returning its exit code and output
+# execute a process returning its exit code and output. A string is run through the shell;
+# a list/tuple is run directly as an argument vector (shell=False), which must be used for
+# any command that includes untrusted input.
 def run_subprocess(command, stdout=True, stderr=False, stdin=None, timeout=60):
     retcode = -1
     output = []
+    use_shell = isinstance(command, str)
     p = subprocess.run(
-        [command], input=stdin, universal_newlines=True, capture_output=True, shell=True, timeout=timeout
+        [command] if use_shell else [str(x) for x in command],
+        input=stdin,
+        universal_newlines=True,
+        capture_output=True,
+        shell=use_shell,
+        timeout=timeout,
     )
     if p:
         retcode = p.returncode
