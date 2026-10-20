@@ -9,10 +9,14 @@
 #   - SSH
 #   - Identify network interfaces
 
+import ipaddress
 import os
 import sys
 import fileinput
 import re
+import shlex
+
+from urllib.parse import urlparse
 
 from dialog import Dialog
 from malcolm_utils import run_subprocess, get_available_adapters, identify_adapter
@@ -49,6 +53,13 @@ TIME_SYNC_HTPDATE_TEST_COMMAND = '/usr/sbin/htpdate -4 -a -d'
 TIME_SYNC_NTP = 'ntp'
 TIME_SYNC_NTP_CONFIG = '/etc/ntpsec/ntp.conf'
 
+# RFC 1123 hostname: dot-separated labels of letters, digits and hyphens (no leading/trailing hyphen)
+HOSTNAME_RE = re.compile(
+    r"^(?=.{1,253}$)[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$"
+)
+# conservative set of characters permitted in an htpdate URL (no whitespace, quotes or shell metacharacters)
+URL_SAFE_CHARS_RE = re.compile(r"^[A-Za-z0-9._:/%\[\]-]+$")
+
 
 ###################################################################################################
 class CancelledError(Exception):
@@ -60,6 +71,57 @@ class CancelledError(Exception):
 def clearquit():
     os.system('clear')
     sys.exit(0)
+
+
+def is_valid_hostname(value):
+    """Return True if value is a valid RFC 1123 hostname or an IP address literal."""
+    if not isinstance(value, str) or (len(value) == 0):
+        return False
+    try:
+        ipaddress.ip_address(value)
+        return True
+    except ValueError:
+        pass
+    return HOSTNAME_RE.match(value) is not None
+
+
+def validate_time_sync_url(value):
+    """Validate an operator-supplied htpdate URL.
+
+    Only http/https URLs made up of a hostname or IP address, an optional port and
+    an optional simple path are accepted; anything containing whitespace, quotes,
+    credentials, query strings or shell metacharacters is rejected.
+
+    Returns:
+        str: the validated URL, or None if it is not acceptable
+    """
+    if not isinstance(value, str):
+        return None
+    value = value.strip()
+    if (len(value) == 0) or (URL_SAFE_CHARS_RE.match(value) is None):
+        return None
+    try:
+        parsed = urlparse(value)
+        hostname = parsed.hostname
+        port = parsed.port
+    except ValueError:
+        return None
+    if parsed.scheme not in ('http', 'https'):
+        return None
+    if (not hostname) or (parsed.username is not None) or (parsed.password is not None):
+        return None
+    if parsed.params or parsed.query or parsed.fragment:
+        return None
+    if not is_valid_hostname(hostname):
+        return None
+    if (port is not None) and not (1 <= port <= 65535):
+        return None
+    return value
+
+
+def htpdate_cron_entry(interval, url):
+    """Build the /etc/cron.d line for periodic htpdate synchronization."""
+    return f'*/{int(interval)} * * * * root {TIME_SYNC_HTPDATE_PERIODIC_COMMAND} {shlex.quote(url)}\n'
 
 
 def get_htpdate_config():
@@ -77,7 +139,7 @@ def get_htpdate_config():
                 cron_match = cron_re.search(line)
                 if cron_match is not None:
                     interval = int(cron_match.group(1))
-                    url = cron_match.group(2)
+                    url = cron_match.group(2).strip('\'"')
                     break
     except (OSError, ValueError):
         pass
@@ -151,15 +213,14 @@ def main():
                         code, new_hostname = d.inputbox("System hostname", init=old_hostname)
                         if (code == Dialog.CANCEL) or (code == Dialog.ESC):
                             raise CancelledError
-                        elif len(new_hostname) <= 0:
+                        new_hostname = new_hostname.strip()
+                        if not is_valid_hostname(new_hostname):
                             code = d.msgbox(text=MSG_MESSAGE_ERROR.format('Invalid hostname specified'))
                         else:
                             break
 
                     # set new hostname
-                    ecode, host_set_output = run_subprocess(
-                        f'hostnamectl set-hostname {new_hostname.strip()}', stderr=True
-                    )
+                    ecode, host_set_output = run_subprocess(['hostnamectl', 'set-hostname', new_hostname], stderr=True)
                     if ecode == 0:
                         ecode, host_get_output = run_subprocess('hostnamectl', stderr=True)
                         emsg_str = '\n'.join(host_get_output)
@@ -240,15 +301,15 @@ def main():
                         if (code == Dialog.CANCEL) or (code == Dialog.ESC):
                             raise CancelledError
 
-                        elif len(values[0]) <= 0:
+                        elif validate_time_sync_url(values[0]) is None:
                             code = d.msgbox(text=MSG_ERR_BAD_HOST)
 
                         else:
-                            http_url = values[0]
+                            http_url = validate_time_sync_url(values[0])
                             break
 
                     # test with htpdate to see if we can connect
-                    ecode, test_output = run_subprocess(f"{TIME_SYNC_HTPDATE_TEST_COMMAND} {http_url}")
+                    ecode, test_output = run_subprocess(shlex.split(TIME_SYNC_HTPDATE_TEST_COMMAND) + [http_url])
                     if ecode == 0:
                         emsg_str = '\n'.join(test_output)
                         code = d.msgbox(text=f"{MSG_TIME_SYNC_TEST_SUCCESS}{emsg_str}")
@@ -282,11 +343,11 @@ def main():
                         f.write('SHELL=/bin/bash\n')
                         f.write('PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin\n')
                         f.write('\n')
-                        f.write(f'*/{htpdate_interval} * * * * root {TIME_SYNC_HTPDATE_PERIODIC_COMMAND} {http_url}\n')
+                        f.write(htpdate_cron_entry(htpdate_interval, http_url))
                         f.write('\n')
 
                     # now actually do the sync "for real" one time (so we can get in sync before waiting for the interval)
-                    ecode, sync_output = run_subprocess(f"{TIME_SYNC_HTPDATE_INITIAL_COMMAND} {http_url}")
+                    ecode, sync_output = run_subprocess(shlex.split(TIME_SYNC_HTPDATE_INITIAL_COMMAND) + [http_url])
                     if ecode == 0 and os.path.isfile('/usr/sbin/fake-hwclock'):
                         run_subprocess('/usr/sbin/fake-hwclock save')
                     emsg_str = '\n'.join(sync_output)
@@ -307,7 +368,7 @@ def main():
                         if (code == Dialog.CANCEL) or (code == Dialog.ESC):
                             raise CancelledError
 
-                        elif len(values[0]) <= 0:
+                        elif not is_valid_hostname(values[0]):
                             code = d.msgbox(text=MSG_ERR_BAD_HOST)
 
                         else:
