@@ -1,2 +1,11 @@
-# allow unprivileged mgmt of UFW access for Malcolm service ports
-%netdev ALL=(root) NOPASSWD: /usr/local/bin/ufw_manager.sh
+# allow unprivileged mgmt of UFW access for Malcolm service ports, limited to the
+#   argument shapes used by /usr/local/bin/ufw-manager and scripts/control.py
+Cmnd_Alias UFW_MANAGER = /usr/local/bin/ufw_manager.sh "", \
+                         /usr/local/bin/ufw_manager.sh -a status, \
+                         /usr/local/bin/ufw_manager.sh -a numbered, \
+                         /usr/local/bin/ufw_manager.sh -a reset, \
+                         /usr/local/bin/ufw_manager.sh -a allow *, \
+                         /usr/local/bin/ufw_manager.sh -a deny *, \
+                         /usr/local/bin/ufw_manager.sh -a reject *, \
+                         /usr/local/bin/ufw_manager.sh -a limit *
+%netdev ALL=(root) NOPASSWD: UFW_MANAGER
