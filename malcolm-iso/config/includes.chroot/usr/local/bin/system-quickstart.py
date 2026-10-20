@@ -57,8 +57,9 @@ TIME_SYNC_NTP_CONFIG = '/etc/ntpsec/ntp.conf'
 HOSTNAME_RE = re.compile(
     r"^(?=.{1,253}$)[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$"
 )
-# conservative set of characters permitted in an htpdate URL (no whitespace, quotes or shell metacharacters)
-URL_SAFE_CHARS_RE = re.compile(r"^[A-Za-z0-9._:/%\[\]-]+$")
+# conservative set of characters permitted in an htpdate URL (no whitespace, quotes or shell metacharacters;
+# '%' is also excluded because cron treats it as a command/stdin separator even inside quotes)
+URL_SAFE_CHARS_RE = re.compile(r"^[A-Za-z0-9._:/\[\]-]+$")
 
 
 ###################################################################################################

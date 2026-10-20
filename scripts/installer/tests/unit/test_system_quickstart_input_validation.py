@@ -79,6 +79,7 @@ class TestSystemQuickstartInputValidation(unittest.TestCase):
             "https://",
             "https://1.1.1.1:99999",
             "https://bad host:443",
+            "https://time.example.com/time%20sync",
         ):
             self.assertIsNone(self.qs.validate_time_sync_url(value), repr(value))
 
