@@ -22,6 +22,9 @@ NGINX_BLANK_CONF=${NGINX_CONF_DIR}/nginx_blank.conf
 # "include" file for resolver directive
 NGINX_RESOLVER_CONF=${NGINX_CONF_DIR}/nginx_system_resolver.conf
 
+# "include" file for TLS verification settings of the Hedgehog sensor extracted-files proxy
+NGINX_HEDGEHOG_EXTRACTED_FILES_SSL_CONF=${NGINX_CONF_DIR}/nginx_hedgehog_extracted_files_ssl_rt.conf
+
 # "include" file for /auth endpoint location
 NGINX_AUTH_LOCATION_LINK=${NGINX_CONF_DIR}/nginx_auth_location.conf
 
@@ -633,6 +636,12 @@ echo -n "resolver ${DNS_SERVER}" > "${NGINX_RESOLVER_CONF}"
 [[ "${NGINX_RESOLVER_IPV4:-true}" == "false" ]] && echo -n " ipv4=off" >> "${NGINX_RESOLVER_CONF}"
 [[ "${NGINX_RESOLVER_IPV6:-true}" == "false" ]] && echo -n " ipv6=off" >> "${NGINX_RESOLVER_CONF}"
 echo ";" >> "${NGINX_RESOLVER_CONF}"
+
+# render the sensor allowlist map and TLS verification settings for the /hh-extracted-files/ route
+"$(dirname "$(realpath "$0")")"/hedgehog_extracted_files_config.sh \
+  "${NGINX_CONFD_DIR}/02_hedgehog_extracted_files_hosts.conf" \
+  "${NGINX_HEDGEHOG_EXTRACTED_FILES_SSL_CONF}" \
+  "${LUA_SSL_TRUSTED_CERTIFICATE_BUNDLE}"
 
 set -e
 
