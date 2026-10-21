@@ -9,8 +9,8 @@
 # CVE-2026-109619 ("PHP2Shell"). PHP_MIN_VERSION (or the positional
 # arguments) is a space-separated list of fixed releases, one per series;
 # the default is the set of first fixed releases from the advisory. A PHP
-# whose series is older than every listed series fails; a series newer than
-# every listed one passes (it was released after the fix).
+# whose series is not listed fails, unless the series is newer than every
+# listed one (it was released after the fix).
 # Can also be run against a built image, e.g.:
 #   docker run --rm --entrypoint /usr/local/bin/php_version_check.sh <image>
 
@@ -29,16 +29,15 @@ version_ge() {
 }
 
 min_for_series() {
-  # usage: min_for_series 8.4.26 -> the listed minimum whose major.minor matches,
-  # else "" if the series is newer than all listed ones, else the oldest listed
-  # minimum (so an older unlisted series always fails)
-  local SERIES="${1%.*}" MIN OLDEST="" NEWEST=""
+  # usage: min_for_series 8.4.26 -> prints the listed minimum whose major.minor
+  # matches; prints "newer" if the series is newer than every listed one (released
+  # after the fix); prints "unlisted" otherwise (an unknown series is never trusted)
+  local SERIES="${1%.*}" MIN NEWEST=""
   for MIN in $MIN_VERSIONS; do
     [[ "${MIN%.*}" == "$SERIES" ]] && { echo "$MIN"; return; }
-    [[ -z "$OLDEST" ]] || version_ge "$OLDEST" "$MIN" && OLDEST="$MIN"
     [[ -z "$NEWEST" ]] || version_ge "$MIN" "$NEWEST" && NEWEST="$MIN"
   done
-  if version_ge "$1" "$NEWEST"; then echo ""; else echo "$OLDEST"; fi
+  if version_ge "$1" "$NEWEST"; then echo "newer"; else echo "unlisted"; fi
 }
 
 RESULT=0
@@ -56,8 +55,11 @@ for BIN in php php-fpm php-fpm8.5 php-fpm8.4 php-fpm8.3 php-fpm8.2 php-cgi; do
       continue
     fi
     MIN_VERSION="$(min_for_series "$VERSION")"
-    if [[ -z "$MIN_VERSION" ]]; then
+    if [[ "$MIN_VERSION" == "newer" ]]; then
       echo "OK: $BIN is PHP $VERSION (series newer than all listed minimums: $MIN_VERSIONS)"
+    elif [[ "$MIN_VERSION" == "unlisted" ]]; then
+      echo "ERROR: $BIN is PHP $VERSION, series ${VERSION%.*} has no listed minimum (minimums: $MIN_VERSIONS)" >&2
+      RESULT=1
     elif version_ge "$VERSION" "$MIN_VERSION"; then
       echo "OK: $BIN is PHP $VERSION (>= $MIN_VERSION)"
     else
