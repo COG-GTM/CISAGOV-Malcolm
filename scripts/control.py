@@ -944,16 +944,50 @@ def collect_compose_status():
     return services
 
 
+def kubernetes_service_name(labels, fallback=None):
+    """Malcolm's manifests label pods with `app: <service>`; fall back to a `name` label or the object name."""
+    labels = labels if isinstance(labels, dict) else {}
+    service = str(labels.get('app') or labels.get('name') or fallback or '')
+    if service.endswith('-deployment'):
+        service = service[: -len('-deployment')]
+    return service or None
+
+
+def kubernetes_deployment_to_service_status(deployment):
+    """A `not created` entry for a deployment that currently has no pods at all."""
+    metadata = getattr(deployment, 'metadata', None)
+    spec = getattr(deployment, 'spec', None)
+    template = getattr(spec, 'template', None)
+    deploymentName = getattr(metadata, 'name', None)
+    service = kubernetes_service_name(
+        getattr(getattr(template, 'metadata', None), 'labels', None), deploymentName
+    ) or kubernetes_service_name(getattr(metadata, 'labels', None), deploymentName)
+    image, tag = None, None
+    for container in getattr(getattr(template, 'spec', None), 'containers', None) or []:
+        image, tag = split_image_tag(getattr(container, 'image', None))
+        break
+    return {
+        'name': deploymentName,
+        'service': service,
+        'state': STATUS_STATE_NOT_CREATED,
+        'health': None,
+        'image': image,
+        'image_tag': tag,
+        'status': 'No pods',
+        'container': None,
+        'restarts': None,
+        'node': None,
+        'phase': None,
+    }
+
+
 def kubernetes_pod_to_service_statuses(pod):
     """One status entry per container in a pod, derived from the pod's container statuses."""
     metadata = getattr(pod, 'metadata', None)
     status = getattr(pod, 'status', None)
     spec = getattr(pod, 'spec', None)
     podName = getattr(metadata, 'name', None)
-    labels = getattr(metadata, 'labels', None) or {}
-    service = str(labels.get('name') or podName or '')
-    if service.endswith('-deployment'):
-        service = service[: -len('-deployment')]
+    service = kubernetes_service_name(getattr(metadata, 'labels', None), podName)
     phase = str(getattr(status, 'phase', None) or '').lower()
     node = getattr(spec, 'node_name', None)
 
@@ -1019,10 +1053,27 @@ def collect_kubernetes_status():
         pods = kubeImported.client.CoreV1Api().list_namespaced_pod(args.namespace, watch=False)
     except Exception as e:
         raise StatusCollectionError(f'could not list pods in namespace {args.namespace}: {e}')
+    try:
+        deployments = kubeImported.client.AppsV1Api().list_namespaced_deployment(args.namespace, watch=False)
+    except Exception as e:
+        raise StatusCollectionError(f'could not list deployments in namespace {args.namespace}: {e}')
 
     services = []
     for pod in getattr(pods, 'items', None) or []:
         services.extend(kubernetes_pod_to_service_statuses(pod))
+
+    # a deployment that exists in the namespace but has no pods (e.g., pods evicted or never scheduled) would
+    # otherwise be absent from the report; deployments intentionally scaled to zero replicas are skipped
+    seen = {s['service'] for s in services}
+    for deployment in getattr(deployments, 'items', None) or []:
+        replicas = getattr(getattr(deployment, 'spec', None), 'replicas', None)
+        if (replicas is not None) and (int(replicas) == 0):
+            continue
+        entry = kubernetes_deployment_to_service_status(deployment)
+        if entry['service'] and (entry['service'] not in seen):
+            services.append(entry)
+            seen.add(entry['service'])
+
     if args.service:
         requested = set(get_iterable(args.service))
         services = [s for s in services if s['service'] in requested]
@@ -3892,8 +3943,9 @@ def main():
     logging.info(f"Malcolm path: {GetMalcolmPath()}")
 
     # --json is only meaningful for the status operation, which must then be the only operation requested
+    # (the operation may also be implied by the symlink name, e.g. ./scripts/wipe, which is resolved further down)
     if args.statusJson:
-        invokedAsStatus = os.path.islink(os.path.join(ScriptPath, ScriptName)) and (ScriptName == "status")
+        linkedOperation = ScriptName if os.path.islink(os.path.join(ScriptPath, ScriptName)) else None
         otherOperations = (
             args.cmdStart,
             args.cmdRestart,
@@ -3905,8 +3957,9 @@ def main():
             args.cmdPrintURLs,
             args.netboxBackupFile is not None,
             args.netboxRestoreFile is not None,
+            (linkedOperation is not None) and (linkedOperation != "status"),
         )
-        if (not (args.cmdStatus or invokedAsStatus)) or any(otherOperations):
+        if (not (args.cmdStatus or (linkedOperation == "status"))) or any(otherOperations):
             parser.error('--json can only be used with --status and no other operation')
 
     # handle sigint and sigterm for graceful shutdown
