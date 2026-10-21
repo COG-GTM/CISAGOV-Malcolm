@@ -426,7 +426,7 @@ Malcolm services can be accessed at https://192.168.121.239/
 ------------------------------------------------------------------------------
 ```
 
-Check the status of the Malcolm deployment with `./scripts/status`:
+Check the status of the Malcolm deployment with `./scripts/status` (add `--json` for a [machine-readable report](running.md#Status) suitable for monitoring):
 
 ```
 $ ./scripts/status -f /path/to/kubeconfig.yaml

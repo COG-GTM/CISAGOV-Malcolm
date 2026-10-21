@@ -58,6 +58,7 @@ Malcolm can also easily be deployed locally on an ordinary consumer workstation 
         + [Authentication and authorization for remote data store clusters](opensearch-instances.md#OpenSearchAuth)
     - [Starting Malcolm](running.md#Starting)
     - [Stopping and restarting Malcolm](running.md#StopAndRestart)
+    - [Checking Malcolm's status](running.md#Status)
     - [Clearing Malcolm's data](running.md#Wipe)
     - [Temporary read-only interface](running.md#ReadOnlyUI)
 * [Network traffic artifact upload](upload.md#Upload)

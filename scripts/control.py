@@ -797,6 +797,291 @@ def keystore_op(service, dropPriv=False, *keystore_args, **run_process_kwargs):
 
 
 ###################################################################################################
+# machine-readable status (--status --json)
+STATUS_JSON_EXIT_OK = 0
+STATUS_JSON_EXIT_UNHEALTHY = 1
+STATUS_JSON_EXIT_ERROR = 2
+STATUS_STATE_RUNNING = 'running'
+STATUS_STATE_NOT_CREATED = 'not created'
+STATUS_HEALTH_HEALTHY = 'healthy'
+STATUS_HEALTH_UNHEALTHY = 'unhealthy'
+COMPOSE_SERVICE_LABEL = 'com.docker.compose.service'
+
+
+class StatusCollectionError(Exception):
+    pass
+
+
+def split_image_tag(image):
+    """Split a container image reference into (repository, tag); tag is None if unspecified."""
+    if not image:
+        return None, None
+    ref = str(image).strip().split('@', 1)[0]
+    lastSlash = ref.rfind('/')
+    lastColon = ref.rfind(':')
+    if lastColon > lastSlash:
+        return ref[:lastColon], ref[lastColon + 1 :]
+    return ref, None
+
+
+def parse_compose_ps_json(lines):
+    """Parse `compose ps --format json` output, which is either a single JSON array/object
+    or one JSON object per line depending on the compose version. Raises ValueError if the
+    output is not JSON."""
+    text = "\n".join(str(x) for x in get_iterable(lines)).strip()
+    if not text:
+        return []
+    try:
+        parsed = json.loads(text)
+        records = parsed if isinstance(parsed, list) else [parsed]
+    except ValueError:
+        records = []
+        for line in text.splitlines():
+            line = line.strip()
+            if line:
+                records.append(json.loads(line))
+    for record in records:
+        if not isinstance(record, dict):
+            raise ValueError(f'unexpected compose ps record: {record!r}')
+    return records
+
+
+def compose_record_to_service_status(record):
+    labels = record.get('Labels')
+    if isinstance(labels, str):
+        labels = dict(kv.split('=', 1) for kv in labels.split(',') if '=' in kv)
+    elif not isinstance(labels, dict):
+        labels = {}
+
+    name = record.get('Name') or record.get('Names')
+    if isinstance(name, list):
+        name = name[0] if name else None
+
+    state = str(record.get('State') or '').strip().lower()
+    statusText = str(record.get('Status') or '').strip()
+    health = str(record.get('Health') or '').strip().lower()
+    if not health:
+        # podman compose reports health only inside the status string, e.g., "Up 5 minutes (healthy)"
+        if m := re.search(r'\((healthy|unhealthy|starting|health: starting)\)', statusText, re.IGNORECASE):
+            health = m.group(1).lower().replace('health: ', '')
+    image, tag = split_image_tag(record.get('Image'))
+
+    return {
+        'name': name,
+        'service': record.get('Service') or labels.get(COMPOSE_SERVICE_LABEL) or name,
+        'state': state or None,
+        'health': health or None,
+        'image': image,
+        'image_tag': tag,
+        'status': statusText or None,
+    }
+
+
+def compose_services_for_profile(composeYaml, profile):
+    """Names and image references of the services defined in the compose file for the given profile."""
+    result = {}
+    for svcName, svcDef in (deep_get(composeYaml, ['services']) or {}).items():
+        if not isinstance(svcDef, dict):
+            continue
+        profiles = svcDef.get('profiles')
+        if (not profiles) or (profile in get_iterable(profiles)):
+            result[str(svcName)] = svcDef.get('image')
+    return result
+
+
+def collect_compose_status():
+    global args
+    global dockerComposeBin
+    global dockerComposeYaml
+
+    osEnv = os.environ.copy()
+    if not args.noTmpDirOverride:
+        osEnv['TMPDIR'] = MalcolmTmpPath
+
+    cmd = [
+        dockerComposeBin,
+        '--profile',
+        args.composeProfile,
+        '-f',
+        args.composeFile,
+        'ps',
+        '--all',
+        '--format',
+        'json',
+    ]
+    if args.service is not None:
+        cmd.append(args.service)
+
+    # stderr is excluded so that compose warnings cannot corrupt the JSON we're about to parse
+    err, out = run_process(cmd, stderr=False, env=osEnv, debug=log_level_is_debug(args.verbose))
+    if err != 0:
+        raise StatusCollectionError(f'compose ps exited with code {err}: {" ".join(x for x in out if x).strip()}')
+    try:
+        records = parse_compose_ps_json(out)
+    except ValueError as e:
+        raise StatusCollectionError(f'could not parse compose ps output as JSON: {e}')
+
+    services = [compose_record_to_service_status(record) for record in records]
+
+    # services defined for this profile that have no container at all are reported as not created
+    requested = set(get_iterable(args.service)) if args.service else None
+    seen = set(s['service'] for s in services)
+    for svcName, svcImage in compose_services_for_profile(dockerComposeYaml, args.composeProfile).items():
+        if ((requested is None) or (svcName in requested)) and (svcName not in seen):
+            image, tag = split_image_tag(svcImage if isinstance(svcImage, str) else None)
+            services.append(
+                {
+                    'name': None,
+                    'service': svcName,
+                    'state': STATUS_STATE_NOT_CREATED,
+                    'health': None,
+                    'image': image,
+                    'image_tag': tag,
+                    'status': None,
+                }
+            )
+
+    return services
+
+
+def kubernetes_pod_to_service_statuses(pod):
+    """One status entry per container in a pod, derived from the pod's container statuses."""
+    metadata = getattr(pod, 'metadata', None)
+    status = getattr(pod, 'status', None)
+    spec = getattr(pod, 'spec', None)
+    podName = getattr(metadata, 'name', None)
+    labels = getattr(metadata, 'labels', None) or {}
+    service = str(labels.get('name') or podName or '')
+    if service.endswith('-deployment'):
+        service = service[: -len('-deployment')]
+    phase = str(getattr(status, 'phase', None) or '').lower()
+    node = getattr(spec, 'node_name', None)
+
+    results = []
+    for cs in getattr(status, 'container_statuses', None) or []:
+        csState = getattr(cs, 'state', None)
+        if getattr(csState, 'running', None):
+            state = STATUS_STATE_RUNNING
+            statusText = 'Running'
+        elif terminated := getattr(csState, 'terminated', None):
+            state = 'exited'
+            statusText = f'Terminated ({getattr(terminated, "reason", None) or getattr(terminated, "exit_code", "")})'
+        elif waiting := getattr(csState, 'waiting', None):
+            state = 'waiting'
+            statusText = f'Waiting ({getattr(waiting, "reason", None) or ""})'
+        else:
+            state = phase or None
+            statusText = phase or None
+        ready = bool(getattr(cs, 'ready', False))
+        image, tag = split_image_tag(getattr(cs, 'image', None))
+        results.append(
+            {
+                'name': podName,
+                'service': service or None,
+                'state': state,
+                'health': (STATUS_HEALTH_HEALTHY if ready else STATUS_HEALTH_UNHEALTHY) if state else None,
+                'image': image,
+                'image_tag': tag,
+                'status': statusText,
+                'container': getattr(cs, 'name', None),
+                'restarts': getattr(cs, 'restart_count', None),
+                'node': node,
+                'phase': phase or None,
+            }
+        )
+
+    if not results:
+        results.append(
+            {
+                'name': podName,
+                'service': service or None,
+                'state': phase or None,
+                'health': None,
+                'image': None,
+                'image_tag': None,
+                'status': phase or None,
+                'container': None,
+                'restarts': None,
+                'node': node,
+                'phase': phase or None,
+            }
+        )
+    return results
+
+
+def collect_kubernetes_status():
+    global args
+    global kubeImported
+
+    if not kubeImported:
+        raise StatusCollectionError('the official Python client library for kubernetes is not available')
+    try:
+        pods = kubeImported.client.CoreV1Api().list_namespaced_pod(args.namespace, watch=False)
+    except Exception as e:
+        raise StatusCollectionError(f'could not list pods in namespace {args.namespace}: {e}')
+
+    services = []
+    for pod in getattr(pods, 'items', None) or []:
+        services.extend(kubernetes_pod_to_service_statuses(pod))
+    if args.service:
+        requested = set(get_iterable(args.service))
+        services = [s for s in services if s['service'] in requested]
+    return services
+
+
+def build_status_report(services, runtime, error=None):
+    running = sum(1 for s in services if s['state'] == STATUS_STATE_RUNNING)
+    unhealthy = sum(
+        1
+        for s in services
+        if (s['state'] == STATUS_STATE_RUNNING) and (s['health'] not in (None, STATUS_HEALTH_HEALTHY))
+    )
+    stopped = len(services) - running
+    report = {
+        'runtime': runtime,
+        'services': sorted(services, key=lambda s: (str(s.get('service') or ''), str(s.get('name') or ''))),
+        'summary': {
+            'total': len(services),
+            'running': running,
+            'unhealthy': unhealthy,
+            'stopped': stopped,
+            'healthy': (error is None) and (len(services) > 0) and (unhealthy == 0) and (stopped == 0),
+        },
+    }
+    if error is not None:
+        report['error'] = str(error)
+    return report
+
+
+def status_json():
+    """Print a single JSON document describing Malcolm's services to stdout and return the exit code
+    (0 when everything is running and healthy, 1 otherwise, 2 if status could not be collected)."""
+    global orchMode
+
+    runtime = str(orchMode.name).lower() if orchMode else None
+    error = None
+    services = []
+    try:
+        if orchMode is OrchestrationFramework.DOCKER_COMPOSE:
+            services = collect_compose_status()
+        elif orchMode is OrchestrationFramework.KUBERNETES:
+            services = collect_kubernetes_status()
+        else:
+            raise StatusCollectionError(f'JSON status does not support {orchMode}')
+    except Exception as e:
+        error = f'{type(e).__name__}: {e}' if not isinstance(e, StatusCollectionError) else str(e)
+        logging.error(f'Failed to collect Malcolm status: {error}')
+
+    report = build_status_report(services, runtime, error=error)
+    print(json.dumps(report, indent=2))
+    sys.stdout.flush()
+
+    if error is not None:
+        return STATUS_JSON_EXIT_ERROR
+    return STATUS_JSON_EXIT_OK if report['summary']['healthy'] else STATUS_JSON_EXIT_UNHEALTHY
+
+
+###################################################################################################
 def status():
     global args
     global dockerComposeBin
@@ -3042,6 +3327,8 @@ def main():
     global yamlImported
     global dotenvImported
 
+    exitCode = 0
+
     # extract arguments from the command line
     # print (sys.argv[1:]);
     parser = argparse.ArgumentParser(
@@ -3523,6 +3810,19 @@ def main():
         help="Display status of Malcolm components",
     )
     logsAndStatusGroup.add_argument(
+        '--json',
+        dest='statusJson',
+        type=str2bool,
+        nargs='?',
+        const=True,
+        default=False,
+        help=(
+            "With --status, print a single JSON document describing each service's state, health, and image "
+            "(nothing else is written to stdout; logging goes to stderr) and exit 0 only if all services are "
+            "running and healthy (1 otherwise, 2 if status could not be collected)"
+        ),
+    )
+    logsAndStatusGroup.add_argument(
         '--urls',
         dest='cmdPrintURLs',
         type=str2bool,
@@ -3590,6 +3890,24 @@ def main():
     logging.debug(f"Arguments: {sys.argv[1:]}")
     logging.debug(f"Arguments: {args}")
     logging.info(f"Malcolm path: {GetMalcolmPath()}")
+
+    # --json is only meaningful for the status operation, which must then be the only operation requested
+    if args.statusJson:
+        invokedAsStatus = os.path.islink(os.path.join(ScriptPath, ScriptName)) and (ScriptName == "status")
+        otherOperations = (
+            args.cmdStart,
+            args.cmdRestart,
+            args.cmdStop,
+            args.cmdWipe,
+            args.cmdLogs,
+            args.cmdAuthSetup,
+            args.cmdAuthSetupNonInteractive,
+            args.cmdPrintURLs,
+            args.netboxBackupFile is not None,
+            args.netboxRestoreFile is not None,
+        )
+        if (not (args.cmdStatus or invokedAsStatus)) or any(otherOperations):
+            parser.error('--json can only be used with --status and no other operation')
 
     # handle sigint and sigterm for graceful shutdown
     signal.signal(signal.SIGINT, shutdown_handler)
@@ -3784,7 +4102,10 @@ def main():
 
         # display Malcolm status
         if args.cmdStatus:
-            status()
+            if args.statusJson:
+                exitCode = status_json()
+            else:
+                status()
 
         # display Malcolm URLS
         if args.cmdPrintURLs:
@@ -3798,8 +4119,11 @@ def main():
         if args.netboxRestoreFile is not None:
             netboxRestore(args.netboxRestoreFile)
 
+    return exitCode
+
 
 if __name__ == '__main__':
-    main()
-    if coloramaImported:
+    exitCode = main()
+    if coloramaImported and not getattr(args, 'statusJson', False):
         print(Style.RESET_ALL)
+    sys.exit(exitCode or 0)
