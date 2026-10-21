@@ -34,8 +34,10 @@ trap 'rm -rf "$WORK_DIR"' EXIT
 
 UFW_LOG="$WORK_DIR/ufw.log"
 EVIL_MARKER="$WORK_DIR/evil-was-executed"
-STATUS_YML="$WORK_DIR/Malcolm/.ufw-rules.yml"
-mkdir -p "$WORK_DIR/Malcolm"
+STATUS_DIR="$WORK_DIR/var/lib/malcolm"
+STATUS_YML="$STATUS_DIR/ufw-rules.yml"
+LEGACY_YML="$WORK_DIR/home/Malcolm/.ufw-rules.yml"
+mkdir -p "$WORK_DIR/home/Malcolm"
 
 # stub ufw: record each invocation with its arguments as individual, bracketed items
 cat > "$WORK_DIR/ufw" <<STUB
@@ -55,6 +57,7 @@ chmod +x "$WORK_DIR/evil"
 export UFW_MANAGER_UFW_BIN="$WORK_DIR/ufw"
 export UFW_MANAGER_YQ_BIN="$YQ"
 export UFW_MANAGER_STATUS_YML="$STATUS_YML"
+export UFW_MANAGER_LEGACY_YML="$LEGACY_YML"
 
 FAILURES=0
 function pass { echo "PASS: $1"; }
@@ -106,7 +109,7 @@ function assert_ufw_log_equals {
   fi
 }
 function reset_state {
-  rm -f "$UFW_LOG" "$EVIL_MARKER" "$STATUS_YML"
+  rm -f "$UFW_LOG" "$EVIL_MARKER" "$STATUS_YML" "$LEGACY_YML"
 }
 
 # ---------------------------------------------------------------------------
@@ -141,6 +144,7 @@ assert_accepted "allow multiport" -a allow 80,443/tcp
 assert_equals "tracking file has 4 entries" "$("$YQ" '.rules | length' "$STATUS_YML")" "4"
 assert_equals "multiport argument is stored as a single item" "$("$YQ" '.rules[3].rule | join("|")' "$STATUS_YML")" "80,443/tcp"
 assert_equals "tracking file mode is 600" "$(stat -c %a "$STATUS_YML")" "600"
+assert_equals "tracking directory mode is 700" "$(stat -c %a "$STATUS_DIR")" "700"
 assert_accepted "delete allow 22" -d -a allow 22
 assert_equals "delete removed its tracking entry" "$("$YQ" '.rules | length' "$STATUS_YML")" "3"
 rm -f "$UFW_LOG"
@@ -180,6 +184,46 @@ reset_state
 printf 'rules:\n  "0 | .rules": {action: allow, rule: ["22"]}\n' > "$STATUS_YML"
 assert_accepted "reset with non-list rules completes" -a reset
 assert_ufw_log_equals "reset with non-list rules performs no ufw calls" ""
+
+# reset with no tracking file at all is a no-op that creates the file
+reset_state
+assert_accepted "reset without a tracking file completes" -a reset
+assert_ufw_log_equals "reset without a tracking file performs no ufw calls" ""
+assert_equals "reset created an empty tracking file" "$("$YQ" '.rules | length' "$STATUS_YML")" "0"
+
+# ---------------------------------------------------------------------------
+# a pre-existing, too-permissive tracking directory is tightened before use
+reset_state
+chmod 777 "$STATUS_DIR"
+assert_accepted "allow with a lax tracking directory" -a allow 22
+assert_equals "lax tracking directory was tightened to 700" "$(stat -c %a "$STATUS_DIR")" "700"
+
+# ---------------------------------------------------------------------------
+# entries from the legacy user-owned tracking file are imported (once, validated)
+#   when the root-owned tracking file is first created, so reset can retire them
+reset_state
+cat > "$LEGACY_YML" <<YML
+rules:
+  - action: allow
+    rule: ["9200"]
+  - action: allow
+    rule: ["-y", "$WORK_DIR/evil"]
+  - action: reset
+    rule: ["22"]
+  - action: allow
+    rule: ["from", "10.0.0.1", "to", "any", "port", "443"]
+YML
+LEGACY_BEFORE="$(cat "$LEGACY_YML")"
+assert_accepted "reset with only a legacy tracking file completes" -a reset
+assert_no_evil "legacy tracking file import"
+assert_ufw_log_equals "reset retires validated legacy entries only" \
+"[delete][allow][9200]
+[delete][allow][from][10.0.0.1][to][any][port][443]"
+assert_equals "legacy tracking file was not modified" "$(cat "$LEGACY_YML")" "$LEGACY_BEFORE"
+assert_equals "root-owned tracking file is empty after reset" "$("$YQ" '.rules | length' "$STATUS_YML")" "0"
+rm -f "$UFW_LOG"
+assert_accepted "second reset" -a reset
+assert_ufw_log_equals "legacy entries are not imported a second time" ""
 
 # ---------------------------------------------------------------------------
 # a tracking file replaced by a symlink is refused and the target is untouched
