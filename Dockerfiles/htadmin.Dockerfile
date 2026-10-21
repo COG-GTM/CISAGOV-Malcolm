@@ -26,8 +26,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV TERM=xterm
 
 ARG PHP_VERSION=8.4
-# minimum acceptable PHP release (first 8.4.x fixing CVE-2026-109618/CVE-2026-109619); the build fails below this
-ARG PHP_MIN_VERSION=8.4.27
+# minimum acceptable PHP release per series (first releases fixing CVE-2026-109618/CVE-2026-109619); the build fails below this
+ARG PHP_MIN_VERSION="8.2.35 8.3.36 8.4.27 8.5.12"
 ARG BOOTSTRAP_VERSION=3.3.6
 
 ENV PHP_VERSION=$PHP_VERSION
@@ -53,7 +53,7 @@ RUN apt-get -q update && \
       rsync \
       supervisor \
       tini && \
-    /usr/local/bin/php_version_check.sh "$PHP_MIN_VERSION" && \
+    /usr/local/bin/php_version_check.sh $PHP_MIN_VERSION && \
     mkdir -p /run/php && \
   cd /tmp && \
     mkdir -p ./htadmin && \

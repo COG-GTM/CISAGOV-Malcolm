@@ -48,8 +48,8 @@ ENV TERM=xterm
 
 ARG PHP_VERSION=8.4
 ENV PHP_VERSION=$PHP_VERSION
-# minimum acceptable PHP release (first 8.4.x fixing CVE-2026-109618/CVE-2026-109619); the build fails below this
-ARG PHP_MIN_VERSION=8.4.27
+# minimum acceptable PHP release per series (first releases fixing CVE-2026-109618/CVE-2026-109619); the build fails below this
+ARG PHP_MIN_VERSION="8.2.35 8.3.36 8.4.27 8.5.12"
 ENV PHP_MIN_VERSION=$PHP_MIN_VERSION
 
 ARG FILEPOND_SERVER_BRANCH=75fea06f898ea5f474227be2daba924d06ba6aee
@@ -91,7 +91,7 @@ RUN export BINARCH=$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/') 
       rsync \
       tini \
       vim-tiny && \
-    /usr/local/bin/php_version_check.sh "$PHP_MIN_VERSION" && \
+    /usr/local/bin/php_version_check.sh $PHP_MIN_VERSION && \
     rm -f /etc/ssh/ssh_host_* && \
     curl -fsSL -o /usr/local/bin/supercronic "${SUPERCRONIC_URL}${BINARCH}" && \
       chmod +x /usr/local/bin/supercronic && \
