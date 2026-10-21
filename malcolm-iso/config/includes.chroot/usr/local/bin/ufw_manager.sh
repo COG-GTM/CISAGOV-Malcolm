@@ -46,14 +46,12 @@ RULE_TOKEN_PATTERN='^[A-Za-z0-9][A-Za-z0-9 ._:/,-]*$'
 #   runs as root) never creates, follows or rewrites a user-controlled path.
 UFW_STATUS_DIR=/var/lib/malcolm
 UFW_STATUS_YML="$UFW_STATUS_DIR/ufw-rules.yml"
-
-# Earlier versions tracked rules in ~<uid 1000>/Malcolm/.ufw-rules.yml. The first time
-#   the root-owned tracking file is created, well-formed entries are imported from that
-#   legacy (user-writable, therefore untrusted) file so a later reset can still retire
-#   rules that were added before the upgrade. The legacy file itself is never written.
-LEGACY_STATUS_YML=
-MAIN_USER_HOME="$(getent passwd 1000 2>/dev/null | cut -d: -f6 || true)"
-[[ -d "$MAIN_USER_HOME" ]] && LEGACY_STATUS_YML="$MAIN_USER_HOME/Malcolm/.ufw-rules.yml"
+#   Note: earlier versions tracked rules in ~<uid 1000>/Malcolm/.ufw-rules.yml. That
+#   file is deliberately *not* imported: it is writable by an unprivileged user, so its
+#   contents cannot be trusted to drive privileged "ufw delete" operations, and its
+#   comma-joined encoding cannot reliably reconstruct the original arguments. If this
+#   script is deployed onto a system that already has that file, any firewall rules
+#   recorded in it must be reviewed ("ufw status numbered") and removed by hand.
 
 # The following overrides exist solely so the regression tests can run as an
 #   unprivileged user with stubbed binaries. They are ignored when running as root
@@ -63,7 +61,6 @@ if (( EUID != 0 )); then
   YQ_BIN="${UFW_MANAGER_YQ_BIN:-$YQ_BIN}"
   UFW_STATUS_YML="${UFW_MANAGER_STATUS_YML:-$UFW_STATUS_YML}"
   UFW_STATUS_DIR="$(dirname -- "$UFW_STATUS_YML")"
-  LEGACY_STATUS_YML="${UFW_MANAGER_LEGACY_YML:-$LEGACY_STATUS_YML}"
 fi
 
 while getopts :a:dv opts; do
@@ -132,19 +129,13 @@ function check_status_yml {
 # Make sure the tracking file exists, is well-formed enough to be appended to, and
 #   that it and its directory are accessible only by their (root) owner.
 function ensure_status_yml {
-  local IMPORT_LEGACY=0
   check_status_yml || return 1
   [[ -d "$UFW_STATUS_DIR" ]] || mkdir -p -- "$UFW_STATUS_DIR"
   chmod 700 -- "$UFW_STATUS_DIR"
   if [[ ! -f "$UFW_STATUS_YML" ]] || [[ ! -s "$UFW_STATUS_YML" ]]; then
-    [[ -e "$UFW_STATUS_YML" ]] || IMPORT_LEGACY=1
     ( set -o noclobber; rm -f -- "$UFW_STATUS_YML"; echo 'rules: []' > "$UFW_STATUS_YML" )
   fi
   chmod 600 -- "$UFW_STATUS_YML"
-  if (( IMPORT_LEGACY == 1 )) && [[ -n "$LEGACY_STATUS_YML" ]] && [[ -f "$LEGACY_STATUS_YML" ]] && [[ ! -L "$LEGACY_STATUS_YML" ]]; then
-    echo "Importing previously tracked rules from $LEGACY_STATUS_YML into $UFW_STATUS_YML" >&2
-    for_each_valid_entry "$LEGACY_STATUS_YML" add_to_yml
-  fi
 }
 
 # Iterate over the entries of a tracking file, calling the given function with the rule
@@ -225,8 +216,7 @@ elif [[ $ACTION == "numbered" ]]; then
   "$UFW_BIN" status numbered
 
 elif [[ $ACTION == "reset" ]]; then
-  # creating the tracking file here (rather than failing when it is absent) also
-  #   imports any pre-upgrade entries so that they can be retired by this reset
+  # a missing tracking file simply means there is nothing to reset yet
   ensure_status_yml || exit 1
   VERBOSE_FLAG=()
   [[ $VERBOSE == 1 ]] && VERBOSE_FLAG=(-v)

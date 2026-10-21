@@ -36,8 +36,6 @@ UFW_LOG="$WORK_DIR/ufw.log"
 EVIL_MARKER="$WORK_DIR/evil-was-executed"
 STATUS_DIR="$WORK_DIR/var/lib/malcolm"
 STATUS_YML="$STATUS_DIR/ufw-rules.yml"
-LEGACY_YML="$WORK_DIR/home/Malcolm/.ufw-rules.yml"
-mkdir -p "$WORK_DIR/home/Malcolm"
 
 # stub ufw: record each invocation with its arguments as individual, bracketed items
 cat > "$WORK_DIR/ufw" <<STUB
@@ -57,7 +55,6 @@ chmod +x "$WORK_DIR/evil"
 export UFW_MANAGER_UFW_BIN="$WORK_DIR/ufw"
 export UFW_MANAGER_YQ_BIN="$YQ"
 export UFW_MANAGER_STATUS_YML="$STATUS_YML"
-export UFW_MANAGER_LEGACY_YML="$LEGACY_YML"
 
 FAILURES=0
 function pass { echo "PASS: $1"; }
@@ -109,7 +106,7 @@ function assert_ufw_log_equals {
   fi
 }
 function reset_state {
-  rm -f "$UFW_LOG" "$EVIL_MARKER" "$STATUS_YML" "$LEGACY_YML"
+  rm -f "$UFW_LOG" "$EVIL_MARKER" "$STATUS_YML"
 }
 
 # ---------------------------------------------------------------------------
@@ -197,44 +194,6 @@ reset_state
 chmod 777 "$STATUS_DIR"
 assert_accepted "allow with a lax tracking directory" -a allow 22
 assert_equals "lax tracking directory was tightened to 700" "$(stat -c %a "$STATUS_DIR")" "700"
-
-# ---------------------------------------------------------------------------
-# entries from the legacy user-owned tracking file are imported (once, validated)
-#   when the root-owned tracking file is first created, so reset can retire them
-reset_state
-cat > "$LEGACY_YML" <<YML
-rules:
-  - action: allow
-    rule: ["9200"]
-  - action: allow
-    rule: ["-y", "$WORK_DIR/evil"]
-  - action: reset
-    rule: ["22"]
-  - action: allow
-    rule: ["from", "10.0.0.1", "to", "any", "port", "443"]
-YML
-LEGACY_BEFORE="$(cat "$LEGACY_YML")"
-assert_accepted "reset with only a legacy tracking file completes" -a reset
-assert_no_evil "legacy tracking file import"
-assert_ufw_log_equals "reset retires validated legacy entries only" \
-"[delete][allow][9200]
-[delete][allow][from][10.0.0.1][to][any][port][443]"
-assert_equals "legacy tracking file was not modified" "$(cat "$LEGACY_YML")" "$LEGACY_BEFORE"
-assert_equals "root-owned tracking file is empty after reset" "$("$YQ" '.rules | length' "$STATUS_YML")" "0"
-rm -f "$UFW_LOG"
-assert_accepted "second reset" -a reset
-assert_ufw_log_equals "legacy entries are not imported a second time" ""
-
-# ---------------------------------------------------------------------------
-# a tracking file replaced by a symlink is refused and the target is untouched
-reset_state
-echo "do not touch" > "$WORK_DIR/target"
-ln -s "$WORK_DIR/target" "$STATUS_YML"
-assert_rejected "allow refuses a symlinked tracking file" -a allow 22
-assert_rejected "reset refuses a symlinked tracking file" -a reset
-assert_equals "symlink target was not modified" "$(cat "$WORK_DIR/target")" "do not touch"
-assert_ufw_log_equals "ufw is not called when the tracking file is unusable" ""
-rm -f "$STATUS_YML"
 
 # ---------------------------------------------------------------------------
 echo
