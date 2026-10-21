@@ -3,11 +3,13 @@
 # Copyright (c) 2026 Battelle Energy Alliance, LLC.  All rights reserved.
 
 # This script is granted to members of the netdev group via a NOPASSWD sudoers
-#   entry (/etc/sudoers.d/ufw_manager), so everything it consumes (command-line
-#   arguments and the contents of the rule-tracking YML file, which lives in the
-#   unprivileged user's home directory) must be treated as untrusted input.
+#   entry (/etc/sudoers.d/ufw_manager), so its command-line arguments must be
+#   treated as untrusted input, and it must only read from and write to paths
+#   that an unprivileged user cannot control.
 
 set -euo pipefail
+
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 SCRIPT_PATH="$(realpath "$0")"
 
@@ -38,13 +40,12 @@ YQ_BIN=/usr/local/bin/yq
 #   may never begin with "-" so they cannot be interpreted as options.
 RULE_TOKEN_PATTERN='^[A-Za-z0-9][A-Za-z0-9 ._:/,-]*$'
 
-# We'll keep a ~/Malcolm/.ufw-rules.yml file to keep track of entries that have been
-#   previously added to the firewall. Its location is fixed and cannot be overridden
-#   by the caller.
-MAIN_USER="$(id -nu 1000 2>/dev/null || true)"
-MAIN_USER_HOME=
-[[ -n $MAIN_USER ]] && MAIN_USER_HOME="$(getent passwd "$MAIN_USER" | cut -d: -f6)" || MAIN_USER_HOME=
-[[ -d $MAIN_USER_HOME ]] && UFW_STATUS_YML="$MAIN_USER_HOME/Malcolm/.ufw-rules.yml" || UFW_STATUS_YML=
+# We'll keep a root-owned YML file to keep track of entries that have been previously
+#   added to the firewall. Its location is fixed and cannot be overridden by the caller,
+#   and it lives outside of any unprivileged user's control so that this script (which
+#   runs as root) never creates, follows or rewrites a user-controlled path.
+UFW_STATUS_DIR=/var/lib/malcolm
+UFW_STATUS_YML="$UFW_STATUS_DIR/ufw-rules.yml"
 
 # The following overrides exist solely so the regression tests can run as an
 #   unprivileged user with stubbed binaries. They are ignored when running as root
@@ -53,6 +54,7 @@ if (( EUID != 0 )); then
   UFW_BIN="${UFW_MANAGER_UFW_BIN:-$UFW_BIN}"
   YQ_BIN="${UFW_MANAGER_YQ_BIN:-$YQ_BIN}"
   UFW_STATUS_YML="${UFW_MANAGER_STATUS_YML:-$UFW_STATUS_YML}"
+  UFW_STATUS_DIR="$(dirname -- "$UFW_STATUS_YML")"
 fi
 
 while getopts :a:dv opts; do
@@ -95,47 +97,42 @@ function validate_rule_tokens {
   return 0
 }
 
-# Refuse to operate on a tracking file that has been replaced with a symlink or
-#   some other non-regular file, or that is not owned by the main user, as this
-#   script (running as root) creates, chowns and rewrites that file.
+# Defense in depth: refuse to operate on a tracking file (or directory) that has
+#   been replaced with a symlink or some other non-regular file.
 function check_status_yml {
-  local YML_DIR
-  YML_DIR="$(dirname -- "$UFW_STATUS_YML")"
-  if [[ -L "$YML_DIR" ]] || [[ -L "$UFW_STATUS_YML" ]]; then
+  if [[ -L "$UFW_STATUS_DIR" ]] || [[ -L "$UFW_STATUS_YML" ]]; then
     echo "Refusing to use \"$UFW_STATUS_YML\": symbolic links are not permitted" >&2
     return 1
-  elif [[ -e "$UFW_STATUS_YML" ]]; then
-    if [[ ! -f "$UFW_STATUS_YML" ]]; then
-      echo "Refusing to use \"$UFW_STATUS_YML\": not a regular file" >&2
-      return 1
-    elif (( EUID == 0 )) && [[ "$(stat -c %u -- "$UFW_STATUS_YML")" != "1000" ]]; then
-      echo "Refusing to use \"$UFW_STATUS_YML\": unexpected owner" >&2
-      return 1
-    fi
+  elif [[ -e "$UFW_STATUS_YML" ]] && [[ ! -f "$UFW_STATUS_YML" ]]; then
+    echo "Refusing to use \"$UFW_STATUS_YML\": not a regular file" >&2
+    return 1
   fi
   return 0
 }
 
+# Make sure the tracking file exists, is well-formed enough to be appended to, and
+#   is readable only by its (root) owner.
 function ensure_status_yml {
-  check_status_yml
-  mkdir -p -- "$(dirname -- "$UFW_STATUS_YML")"
-  if [[ ! -f "$UFW_STATUS_YML" ]] || [[ ! -s "$UFW_STATUS_YML" ]]; then
-    echo 'rules: []' > "$UFW_STATUS_YML"
-    (( EUID == 0 )) && chown 1000:1000 -- "$UFW_STATUS_YML"
-    chmod 600 -- "$UFW_STATUS_YML"
+  check_status_yml || return 1
+  if [[ ! -d "$UFW_STATUS_DIR" ]]; then
+    mkdir -p -- "$UFW_STATUS_DIR"
+    chmod 700 -- "$UFW_STATUS_DIR"
   fi
+  if [[ ! -f "$UFW_STATUS_YML" ]] || [[ ! -s "$UFW_STATUS_YML" ]]; then
+    ( set -o noclobber; rm -f -- "$UFW_STATUS_YML"; echo 'rules: []' > "$UFW_STATUS_YML" )
+  fi
+  chmod 600 -- "$UFW_STATUS_YML"
 }
 
 function add_to_yml {
   local ACTION_ARG=$1
   local -n RULE_ARG=$2
   if [[ -n "$UFW_STATUS_YML" ]]; then
-    ensure_status_yml
     ACTION_ENV=$ACTION_ARG
-    RULE_ENV="$(IFS=,; echo "${RULE_ARG[*]}")"
+    RULE_ENV="$(printf '%s\n' "${RULE_ARG[@]}")"
     DATE_ENV=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
     export ACTION_ENV RULE_ENV DATE_ENV
-    "$YQ_BIN" -i '.rules += [{"action": strenv(ACTION_ENV), "rule": (strenv(RULE_ENV) | split(",")), "timestamp": strenv(DATE_ENV)}]' "$UFW_STATUS_YML"
+    "$YQ_BIN" -i '.rules += [{"action": strenv(ACTION_ENV), "rule": (strenv(RULE_ENV) | split("\n")), "timestamp": strenv(DATE_ENV)}]' "$UFW_STATUS_YML"
   fi
 }
 
@@ -143,13 +140,12 @@ function delete_from_yml {
   local ACTION_ARG=$1
   local -n RULE_ARG=$2
   if [[ -n "$UFW_STATUS_YML" ]]; then
-    ensure_status_yml
     ACTION_ENV=$ACTION_ARG
-    RULE_ENV="$(IFS=,; echo "${RULE_ARG[*]}")"
+    RULE_ENV="$(printf '%s\n' "${RULE_ARG[@]}")"
     export ACTION_ENV RULE_ENV
     "$YQ_BIN" -i '.rules |= map(select(
       (.action != strenv(ACTION_ENV)) or
-      (.rule | join(",")) != (strenv(RULE_ENV) | split(",") | join(","))
+      ((.rule | join("\n")) != strenv(RULE_ENV))
     ))' "$UFW_STATUS_YML" || true # a failed delete is non-fatal
   fi
 }
@@ -186,8 +182,8 @@ elif [[ $ACTION == "reset" ]]; then
     VERBOSE_FLAG=()
     [[ $VERBOSE == 1 ]] && VERBOSE_FLAG=(-v)
     for entry in "${ENTRIES[@]}"; do
-      # the contents of the YML file are untrusted: only numeric indices, rule
-      #   actions (never "reset") and well-formed rule arguments are accepted
+      # defense in depth: only numeric indices, rule actions (never "reset") and
+      #   well-formed rule arguments are accepted from the YML file
       if [[ ! $entry =~ ^[0-9]+$ ]]; then
         echo "Skipping malformed entry \"$entry\" in $UFW_STATUS_YML" >&2
         continue
@@ -208,6 +204,12 @@ elif [[ $ACTION == "reset" ]]; then
   fi
 
 else
+  # make sure we'll be able to track the rule *before* changing the firewall, so
+  #   that a rule is never applied without being recorded for a later reset
+  if [[ -n "$UFW_STATUS_YML" ]]; then
+    ensure_status_yml || exit 1
+  fi
+
   # call UFW to add or delete the rule
   UFW_ARGS=()
   [[ -n "$DELETE" ]] && UFW_ARGS+=("$DELETE")

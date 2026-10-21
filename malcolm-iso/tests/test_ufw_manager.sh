@@ -7,9 +7,10 @@
 #   unprivileged user with a stubbed ufw binary and a real yq, and verify that:
 #     - the caller can no longer choose the yq binary (-y) or tracking file (-u)
 #     - UFW rule arguments beginning with "-" are rejected
-#     - entries read back out of the (user-writable) tracking YML during "reset"
-#       are validated and passed as single argument vector items
-#     - a tracking file replaced with a symlink is refused
+#     - entries read back out of the tracking YML during "reset" are validated
+#       and passed as single argument vector items
+#     - rule arguments containing commas (e.g. 80,443/tcp) round-trip intact
+#     - a tracking file replaced with a symlink is refused before ufw is called
 #
 # Usage: malcolm-iso/tests/test_ufw_manager.sh   (requires yq in PATH)
 
@@ -136,15 +137,18 @@ reset_state
 assert_accepted "allow 22" -a allow 22
 assert_accepted "allow from ... to any port 443" -a allow from 10.0.0.1 to any port 443
 assert_accepted "allow application profile" -a allow 'Nginx Full'
-assert_equals "tracking file has 3 entries" "$("$YQ" '.rules | length' "$STATUS_YML")" "3"
+assert_accepted "allow multiport" -a allow 80,443/tcp
+assert_equals "tracking file has 4 entries" "$("$YQ" '.rules | length' "$STATUS_YML")" "4"
+assert_equals "multiport argument is stored as a single item" "$("$YQ" '.rules[3].rule | join("|")' "$STATUS_YML")" "80,443/tcp"
 assert_equals "tracking file mode is 600" "$(stat -c %a "$STATUS_YML")" "600"
 assert_accepted "delete allow 22" -d -a allow 22
-assert_equals "delete removed its tracking entry" "$("$YQ" '.rules | length' "$STATUS_YML")" "2"
+assert_equals "delete removed its tracking entry" "$("$YQ" '.rules | length' "$STATUS_YML")" "3"
 rm -f "$UFW_LOG"
 assert_accepted "reset" -a reset
 assert_ufw_log_equals "reset deletes each tracked rule with intact argument vectors" \
 "[delete][allow][from][10.0.0.1][to][any][port][443]
-[delete][allow][Nginx Full]"
+[delete][allow][Nginx Full]
+[delete][allow][80,443/tcp]"
 assert_equals "reset emptied the tracking file" "$("$YQ" '.rules | length' "$STATUS_YML")" "0"
 
 # ---------------------------------------------------------------------------
@@ -185,6 +189,7 @@ ln -s "$WORK_DIR/target" "$STATUS_YML"
 assert_rejected "allow refuses a symlinked tracking file" -a allow 22
 assert_rejected "reset refuses a symlinked tracking file" -a reset
 assert_equals "symlink target was not modified" "$(cat "$WORK_DIR/target")" "do not touch"
+assert_ufw_log_equals "ufw is not called when the tracking file is unusable" ""
 rm -f "$STATUS_YML"
 
 # ---------------------------------------------------------------------------
