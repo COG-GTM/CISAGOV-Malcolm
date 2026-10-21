@@ -53,6 +53,16 @@ check "IP entry allowed" grep -qx '  "192.168.122.57" 1;' "$WORK_DIR/hosts.conf"
 check "*.domain entry allowed" grep -qx '  "\*.sensors.example.org" 1;' "$WORK_DIR/hosts.conf"
 check "no other entries allowed" bash -c "[[ \$(grep -c ' 1;$' '$WORK_DIR/hosts.conf') -eq 3 ]]"
 
+# wildcard entries must not be pathname-expanded against the working directory
+GLOB_DIR="$WORK_DIR/glob" && mkdir -p "$GLOB_DIR" && : > "$GLOB_DIR/sensor.example.org"
+check "*.domain renders with matching filenames in cwd" bash -c "cd '$GLOB_DIR' && \
+  NGINX_HEDGEHOG_EXTRACTED_FILES_HOSTS='*.example.org' NGINX_HEDGEHOG_EXTRACTED_FILES_SSL_VERIFY=false \
+  bash '$GENERATOR' '$WORK_DIR/hosts.conf' '$WORK_DIR/ssl.conf' /trust/bundle.pem"
+check "*.domain entry is kept literally" grep -qx '  "\*.example.org" 1;' "$WORK_DIR/hosts.conf"
+check "*.domain entry is not expanded to filenames" bash -c "! grep -q 'sensor.example.org' '$WORK_DIR/hosts.conf'"
+check "newline-separated entries are split" render $'sensor1\nsensor2' false
+check "newline-separated second entry allowed" grep -qx '  "sensor2" 1;' "$WORK_DIR/hosts.conf"
+
 # entries that could break out of the map or match everything must be rejected outright
 for BAD in \
   'sensor1;' \

@@ -30,7 +30,10 @@ HOST_ENTRY_REGEX='^(\*\.)?[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$'
   echo 'map $hh_extracted_files_host $hh_extracted_files_host_allowed {'
   echo '  hostnames;'
   echo '  default 0;'
-  for HOST in ${NGINX_HEDGEHOG_EXTRACTED_FILES_HOSTS:-}; do
+  # split on whitespace only (no pathname expansion, so "*.example.org" stays literal)
+  HOSTS=()
+  IFS=$' \t\n' read -r -d '' -a HOSTS <<< "${NGINX_HEDGEHOG_EXTRACTED_FILES_HOSTS:-}" || true
+  for HOST in "${HOSTS[@]}"; do
     if [[ ! "$HOST" =~ $HOST_ENTRY_REGEX ]]; then
       echo "NGINX_HEDGEHOG_EXTRACTED_FILES_HOSTS entry is not a valid hostname, IP address, or *.domain: $HOST" >&2
       exit 1
