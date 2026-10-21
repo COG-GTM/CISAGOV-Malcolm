@@ -26,13 +26,18 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV TERM=xterm
 
 ARG PHP_VERSION=8.4
+# minimum acceptable PHP release (first 8.4.x fixing CVE-2026-109618/CVE-2026-109619); the build fails below this
+ARG PHP_MIN_VERSION=8.4.27
 ARG BOOTSTRAP_VERSION=3.3.6
 
 ENV PHP_VERSION=$PHP_VERSION
+ENV PHP_MIN_VERSION=$PHP_MIN_VERSION
 ENV BOOTSTRAP_VERSION=$BOOTSTRAP_VERSION
 
 ARG HTADMIN_REF=php-8
 ENV HTADMIN_URL="https://codeload.github.com/mmguero-dev/htadmin/tar.gz/refs/heads/$HTADMIN_REF"
+
+ADD --chmod=755 shared/bin/php_version_check.sh /usr/local/bin/
 
 RUN apt-get -q update && \
     apt-get -y -q --allow-downgrades --allow-remove-essential --allow-change-held-packages --no-install-recommends install \
@@ -48,6 +53,7 @@ RUN apt-get -q update && \
       rsync \
       supervisor \
       tini && \
+    /usr/local/bin/php_version_check.sh "$PHP_MIN_VERSION" && \
     mkdir -p /run/php && \
   cd /tmp && \
     mkdir -p ./htadmin && \
