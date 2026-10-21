@@ -48,6 +48,9 @@ ENV TERM=xterm
 
 ARG PHP_VERSION=8.4
 ENV PHP_VERSION=$PHP_VERSION
+# minimum acceptable PHP release per series (first releases fixing CVE-2026-109618/CVE-2026-109619); the build fails below this
+ARG PHP_MIN_VERSION="8.2.35 8.3.36 8.4.27 8.5.12"
+ENV PHP_MIN_VERSION=$PHP_MIN_VERSION
 
 ARG FILEPOND_SERVER_BRANCH=75fea06f898ea5f474227be2daba924d06ba6aee
 ENV FILEPOND_SERVER_BRANCH=$FILEPOND_SERVER_BRANCH
@@ -66,6 +69,7 @@ COPY --from=npmget /usr/local/lib/node_modules/filepond-plugin-file-metadata /va
 COPY --from=npmget /usr/local/lib/node_modules/filepond-plugin-file-rename /var/www/upload/filepond-plugin-file-rename
 COPY --from=npmget /usr/local/lib/node_modules/@jcubic /var/www/upload/@jcubic
 ADD --chmod=644 file-upload/requirements.txt /usr/local/src/requirements.txt
+ADD --chmod=755 shared/bin/php_version_check.sh /usr/local/bin/
 
 RUN export BINARCH=$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/') && \
     apt-get -q update && \
@@ -87,6 +91,7 @@ RUN export BINARCH=$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/') 
       rsync \
       tini \
       vim-tiny && \
+    /usr/local/bin/php_version_check.sh $PHP_MIN_VERSION && \
     rm -f /etc/ssh/ssh_host_* && \
     curl -fsSL -o /usr/local/bin/supercronic "${SUPERCRONIC_URL}${BINARCH}" && \
       chmod +x /usr/local/bin/supercronic && \
