@@ -29,7 +29,7 @@ fi
 
 if [[ -n "${PCAP_UPLOAD_MAX_FILE_GB:-}" && "$PCAP_UPLOAD_MAX_FILE_GB" =~ ^[0-9]+$ ]]; then
   [[ -f /etc/nginx/sites-available/default ]] && sed -i -E "s/^(\s*client_max_body_size)\s+.*;/\1 ${PCAP_UPLOAD_MAX_FILE_GB}G;/" /etc/nginx/sites-available/default
-  find /etc/php -type f -wholename "*/fpm/php.ini" -print0 | xargs -0 -r -l sed -i -E "s/^(\s*upload_max_filesize)\s*=.*/\1 = ${PCAP_UPLOAD_MAX_FILE_GB}G/"
+  find /etc/php -type f -wholename "*/fpm/php.ini" -print0 | xargs -0 -r -l sed -i -E "s/^(\s*(upload_max_filesize|post_max_size))\s*=.*/\1 = ${PCAP_UPLOAD_MAX_FILE_GB}G/"
   if [[ -f /var/www/upload/index.html ]]; then
     PCAP_UPLOAD_MAX_FILE_MB=$((PCAP_UPLOAD_MAX_FILE_GB * 1000))
     sed -i -E "s/^(\s*maxFileSize)\s*:.*,\s*$/\1: '${PCAP_UPLOAD_MAX_FILE_MB}MB',/" /var/www/upload/index.html
