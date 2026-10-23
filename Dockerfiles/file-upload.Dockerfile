@@ -49,6 +49,12 @@ ENV TERM=xterm
 ARG PHP_VERSION=8.4
 ENV PHP_VERSION=$PHP_VERSION
 
+# php$PHP_VERSION-fpm comes from the floating Debian repositories, so the build fails
+#   unless the resolved package is at least this upstream release. 8.4.27 carries the
+#   fix for CVE-2026-109618 / CVE-2026-109619 (Debian trixie-security 8.4.27-1~deb13u1).
+ARG PHP_MIN_VERSION=8.4.27
+ENV PHP_MIN_VERSION=$PHP_MIN_VERSION
+
 ARG FILEPOND_SERVER_BRANCH=75fea06f898ea5f474227be2daba924d06ba6aee
 ENV FILEPOND_SERVER_BRANCH=$FILEPOND_SERVER_BRANCH
 
@@ -87,6 +93,12 @@ RUN export BINARCH=$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/') 
       rsync \
       tini \
       vim-tiny && \
+    PHP_FPM_PKG_VERSION="$(dpkg-query -W -f='${Version}' "php${PHP_VERSION}-fpm")" && \
+      if ! dpkg --compare-versions "$PHP_FPM_PKG_VERSION" ge "$PHP_MIN_VERSION"; then \
+        echo "ERROR: php${PHP_VERSION}-fpm ${PHP_FPM_PKG_VERSION} is older than PHP_MIN_VERSION ${PHP_MIN_VERSION} (CVE-2026-109618 / CVE-2026-109619); rebuild with --pull --no-cache against current Debian security repositories" >&2; \
+        exit 1; \
+      fi && \
+      echo "php${PHP_VERSION}-fpm ${PHP_FPM_PKG_VERSION} satisfies PHP_MIN_VERSION ${PHP_MIN_VERSION}" && \
     rm -f /etc/ssh/ssh_host_* && \
     curl -fsSL -o /usr/local/bin/supercronic "${SUPERCRONIC_URL}${BINARCH}" && \
       chmod +x /usr/local/bin/supercronic && \
