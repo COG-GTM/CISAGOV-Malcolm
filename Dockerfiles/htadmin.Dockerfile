@@ -26,6 +26,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV TERM=xterm
 
 ARG PHP_VERSION=8.4
+ARG PHP_MIN_DEB_VERSION=8.4.27-1~deb13u1
 ARG BOOTSTRAP_VERSION=3.3.6
 
 ENV PHP_VERSION=$PHP_VERSION
@@ -48,6 +49,15 @@ RUN apt-get -q update && \
       rsync \
       supervisor \
       tini && \
+    # PHP2Shell (CVE-2026-109618 / CVE-2026-109619): fail the build if apt resolved a php8.4 release older than
+    # the Debian trixie-security fix (DSA-6574-1). A ">=" floor rather than an "=" pin because Debian drops
+    # superseded releases from the archive index; bump PHP_MIN_DEB_VERSION when a newer floor is required.
+    PHP_INSTALLED_VERSION="$(dpkg-query -W -f='${Version}' php$PHP_VERSION-fpm)" && \
+      echo "php$PHP_VERSION-fpm installed release: $PHP_INSTALLED_VERSION (minimum: $PHP_MIN_DEB_VERSION)" && \
+      if ! dpkg --compare-versions "$PHP_INSTALLED_VERSION" ge "$PHP_MIN_DEB_VERSION"; then \
+        echo "ERROR: php$PHP_VERSION-fpm $PHP_INSTALLED_VERSION is older than $PHP_MIN_DEB_VERSION (CVE-2026-109618 / CVE-2026-109619); rebuild with --pull --no-cache once the fixed package is available" >&2; \
+        exit 1; \
+      fi && \
     mkdir -p /run/php && \
   cd /tmp && \
     mkdir -p ./htadmin && \
