@@ -580,6 +580,31 @@ KNOWN_DEFAULT_PASSWORDS = frozenset(
 
 KNOWN_DEFAULT_PASSWORD_PLACEHOLDER_PREFIXES = ('CHANGEME', 'CHANGE_ME', 'REPLACE_ME', 'REPLACEME')
 
+# plaintext candidates tried when checking a *hash*: the defaults above plus the empty string and
+#   common placeholder spellings (a hash can only be matched against an enumerated candidate)
+KNOWN_DEFAULT_PASSWORD_HASH_CANDIDATES = frozenset(
+    list(KNOWN_DEFAULT_PASSWORDS)
+    + [
+        '',
+        'CHANGEME_ADMIN_PASSWORD',
+        'changeme_admin_password',
+        'CHANGE_ME_ADMIN_PASSWORD',
+        'CHANGEME_PASSWORD',
+        'CHANGE_ME_PASSWORD',
+        'REPLACE_ME',
+        'REPLACEME',
+        'changeme123',
+        'password123',
+        'Password1',
+        'Password123',
+        'admin123',
+        'malcolm123',
+        'Malcolm123',
+        'M@lc0lm1',
+        'M@lc0lm!',
+    ]
+)
+
 
 def is_known_default_password(value):
     """Return True if value is empty, a well-known default password, or an obvious placeholder."""
@@ -593,19 +618,48 @@ def is_known_default_password(value):
     )
 
 
+def _bcrypt_hash_matches(hashValue, candidate):
+    """Check a bcrypt hash against a plaintext candidate, using the Python bcrypt module if available
+    and otherwise the htpasswd(1) utility. Raises RuntimeError if neither verifier is available."""
+    try:
+        import bcrypt
+    except ImportError:
+        bcrypt = None
+
+    if bcrypt is not None:
+        try:
+            return bcrypt.checkpw(candidate.encode('utf-8'), hashValue.encode('utf-8'))
+        except ValueError:
+            return False
+
+    htpasswdBin = sh_which('htpasswd')
+    if htpasswdBin:
+        with NamedTemporaryFile(mode='w', suffix='.htpasswd', delete=True) as tmpFile:
+            tmpFile.write(f'u:{hashValue}\n')
+            tmpFile.flush()
+            retcode, _ = run_process([htpasswdBin, '-vb', tmpFile.name, 'u', candidate], stderr=False)
+            return retcode == 0
+
+    raise RuntimeError(
+        'unable to verify bcrypt password hash: neither the Python bcrypt module nor the htpasswd utility is available'
+    )
+
+
 def is_known_default_password_hash(hashValue, opensslBin='openssl'):
     """Return True if hashValue is a crypt(3)-style ($1$/$5$/$6$) or bcrypt ($2a$/$2b$/$2y$) hash
-    of a well-known default password (or, for bcrypt, of the empty string).
+    of a well-known default/placeholder password or of the empty string.
 
-    Candidates which cannot be verified (unknown hash format, or bcrypt without the bcrypt module)
-    are treated as not-known-default."""
+    Hashes in an unrecognized format are treated as not-known-default. A bcrypt hash which cannot be
+    verified (no bcrypt module and no htpasswd) raises RuntimeError so that callers fail closed."""
     if not hashValue:
         return False
     hashValue = str(hashValue).strip()
 
     parts = hashValue.split('$')
     if (len(parts) == 4) and (parts[0] == '') and (parts[1] in ('1', '5', '6')) and parts[2]:
-        for candidate in KNOWN_DEFAULT_PASSWORDS:
+        for candidate in KNOWN_DEFAULT_PASSWORD_HASH_CANDIDATES:
+            if not candidate:
+                continue
             try:
                 retcode, output = run_process(
                     [opensslBin, 'passwd', f'-{parts[1]}', '-salt', parts[2], '-stdin'],
@@ -619,16 +673,9 @@ def is_known_default_password_hash(hashValue, opensslBin='openssl'):
         return False
 
     if (len(parts) == 4) and (parts[0] == '') and (parts[1] in ('2a', '2b', '2y')):
-        try:
-            import bcrypt
-        except ImportError:
-            return False
-        for candidate in list(KNOWN_DEFAULT_PASSWORDS) + ['']:
-            try:
-                if bcrypt.checkpw(candidate.encode('utf-8'), hashValue.encode('utf-8')):
-                    return True
-            except ValueError:
-                return False
+        for candidate in KNOWN_DEFAULT_PASSWORD_HASH_CANDIDATES:
+            if _bcrypt_hash_matches(hashValue, candidate):
+                return True
         return False
 
     return False

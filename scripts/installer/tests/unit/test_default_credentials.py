@@ -13,6 +13,7 @@ import re
 import shutil
 import subprocess
 import unittest
+from unittest import mock
 
 from scripts.malcolm_utils import (
     KNOWN_DEFAULT_PASSWORDS,
@@ -73,6 +74,9 @@ class TestKnownDefaultPasswordHashOpenssl(unittest.TestCase):
     def test_md5crypt_hash_of_default_is_detected(self):
         self.assertTrue(is_known_default_password_hash(self._openssl_hash("Malcolm", "1")))
 
+    def test_sha512_hash_of_placeholder_is_detected(self):
+        self.assertTrue(is_known_default_password_hash(self._openssl_hash("CHANGEME_ADMIN_PASSWORD")))
+
     def test_hash_of_unique_password_is_not_detected(self):
         self.assertFalse(is_known_default_password_hash(self._openssl_hash("c0rrect-h0rse-battery-staple-7f3a")))
 
@@ -94,6 +98,25 @@ class TestKnownDefaultPasswordHashBcrypt(unittest.TestCase):
     def test_bcrypt_hash_of_unique_password_is_not_detected(self):
         hashed = bcrypt.hashpw(b"c0rrect-h0rse-battery-staple-7f3a", bcrypt.gensalt(rounds=5)).decode()
         self.assertFalse(is_known_default_password_hash(hashed))
+
+    def test_bcrypt_hash_of_placeholder_is_detected(self):
+        import bcrypt
+
+        hashed = bcrypt.hashpw(b"CHANGEME_ADMIN_PASSWORD", bcrypt.gensalt(rounds=5)).decode()
+        self.assertTrue(is_known_default_password_hash(hashed))
+
+    def test_bcrypt_hash_fails_closed_without_a_verifier(self):
+        import sys
+        import bcrypt
+
+        hashed = bcrypt.hashpw(b"M@lc0lm", bcrypt.gensalt(rounds=5)).decode()
+        # a None entry in sys.modules makes "import bcrypt" raise ImportError
+        utilsModule = sys.modules[is_known_default_password_hash.__module__]
+        with mock.patch.dict(sys.modules, {"bcrypt": None}), mock.patch.object(
+            utilsModule, "sh_which", return_value=None
+        ):
+            with self.assertRaises(RuntimeError):
+                is_known_default_password_hash(hashed)
 
 
 class TestConvenienceConfigShipsNoCredentials(unittest.TestCase):
@@ -124,6 +147,22 @@ class TestConvenienceConfigShipsNoCredentials(unittest.TestCase):
         recipe = text[start : text.index("./scripts/auth_setup", start)]
         self.assertIn('-z "${AUTH_ADMIN_PASSWORD}"', recipe)
         self.assertIn('-z "${AUTH_ADMIN_USERNAME}"', recipe)
+        # placeholder/default plaintext values are rejected before hashing
+        self.assertIn("CHANGEME*", recipe)
+        self.assertIn("M@LC0LM*", recipe)
+
+    def test_justfile_auth_setup_admin_guard_is_scoped_to_malcolm_profile(self):
+        text = _read(".justfile")
+        start = text.index("\nauth-setup:")
+        recipe = text[start : text.index("./scripts/auth_setup", start)]
+        self.assertIn('"${MALCOLM_PROFILE:-malcolm}" == "malcolm"', recipe)
+        self.assertIn('"${AUTH_METHOD:-basic}" == "basic"', recipe)
+        self.assertIn("ADMIN_ARGS=()", recipe)
+
+    def test_auth_setup_refuses_to_retain_default_keycloak_bootstrap_password(self):
+        text = _read(os.path.join("scripts", "auth_setup"))
+        self.assertIn("Refusing to retain the existing Keycloak bootstrap password", text)
+        self.assertIn("is_known_default_password(envValues[keycloakEnvFile]['KC_BOOTSTRAP_ADMIN_PASSWORD'])", text)
 
     def test_auth_setup_has_no_default_arkime_secret(self):
         text = _read(os.path.join("scripts", "auth_setup"))

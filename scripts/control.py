@@ -1926,17 +1926,20 @@ def authSetup():
     if args.cmdAuthSetupNonInteractive:
         # refuse to provision well-known default or placeholder credentials (e.g., values that
         #   have shipped in example/convenience configuration files) as live credentials
-        if (
-            args.authUserName
-            and (args.authPasswordOpenssl or args.authPasswordHtpasswd)
-            and (
-                is_known_default_password_hash(args.authPasswordOpenssl, opensslBin or 'openssl')
-                or is_known_default_password_hash(args.authPasswordHtpasswd)
-            )
-        ):
-            raise Exception(
-                'Refusing to store administrator password: the supplied password hash corresponds to an empty or well-known default password; set a unique administrator password'
-            )
+        if args.authUserName and (args.authPasswordOpenssl or args.authPasswordHtpasswd):
+            try:
+                adminPasswordIsDefault = is_known_default_password_hash(
+                    args.authPasswordOpenssl, opensslBin or 'openssl'
+                ) or is_known_default_password_hash(args.authPasswordHtpasswd)
+            except RuntimeError as e:
+                # fail closed: a hash we cannot check against the known defaults is not stored
+                raise Exception(
+                    f'Refusing to store administrator password: {e}; install the Python bcrypt module or apache2-utils (htpasswd) and retry'
+                )
+            if adminPasswordIsDefault:
+                raise Exception(
+                    'Refusing to store administrator password: the supplied password hash corresponds to an empty, placeholder, or well-known default password; set a unique administrator password'
+                )
         if args.authArkimePassword and is_known_default_password(args.authArkimePassword):
             raise Exception(
                 'Refusing to store Arkime password hash secret: the supplied value is a well-known default; set a unique secret or omit --auth-arkime-password to generate one'
@@ -2646,6 +2649,17 @@ def authSetup():
                                 ('keycloak',),
                             ),
                         )
+                        if (
+                            args.cmdAuthSetupNonInteractive
+                            and (nginxAuthMode == 'keycloak')
+                            and (not args.authKeycloakBootstrapPassword)
+                            and envValues[keycloakEnvFile]['KC_BOOTSTRAP_ADMIN_PASSWORD']
+                            and is_known_default_password(envValues[keycloakEnvFile]['KC_BOOTSTRAP_ADMIN_PASSWORD'])
+                        ):
+                            raise Exception(
+                                'Refusing to retain the existing Keycloak bootstrap password: it is a well-known default; supply a unique --auth-keycloak-bootstrap-password'
+                            )
+
                         # see comment on keyCloakOpts above for definitions
                         for opt in keyCloakOpts:
                             if nginxAuthMode in opt[7]:
