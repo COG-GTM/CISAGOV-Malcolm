@@ -637,8 +637,9 @@ def _bcrypt_hash_matches(hashValue, candidate):
         with NamedTemporaryFile(mode='w', suffix='.htpasswd', delete=True) as tmpFile:
             tmpFile.write(f'u:{hashValue}\n')
             tmpFile.flush()
-            # -i reads the candidate from stdin so it never appears in the process argument list
-            retcode, _ = run_process([htpasswdBin, '-i', '-v', tmpFile.name, 'u'], stdin=candidate, stderr=False)
+            # -i reads the candidate from stdin so it never appears in the process argument list; the
+            #   trailing newline guarantees a stdin pipe is opened even for the empty candidate
+            retcode, _ = run_process([htpasswdBin, '-i', '-v', tmpFile.name, 'u'], stdin=candidate + '\n', stderr=False)
             # htpasswd exits 0 on match and 3 on mismatch; anything else means it could not verify
             if retcode == 0:
                 return True
