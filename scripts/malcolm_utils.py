@@ -8,6 +8,7 @@ import fnmatch
 import functools
 import glob
 import hashlib
+import hmac
 import inspect
 import ipaddress
 import json
@@ -556,6 +557,81 @@ def EVP_BytesToKey(key_length: int, iv_length: int, md, salt: bytes, data: bytes
             iv = iv + md_buf2[: iv_length - len(iv)]
 
     return key, iv
+
+
+###################################################################################################
+# Well-known default/placeholder passwords which must never be provisioned as live credentials
+#   (e.g., values that have historically shipped in example/convenience configuration files)
+KNOWN_DEFAULT_PASSWORDS = frozenset(
+    [
+        'M@lc0lm',
+        'Malcolm',
+        'malcolm',
+        'maltest',
+        'admin',
+        'password',
+        'Password',
+        'changeme',
+        'CHANGEME',
+        'CHANGE_ME',
+        'secret',
+    ]
+)
+
+KNOWN_DEFAULT_PASSWORD_PLACEHOLDER_PREFIXES = ('CHANGEME', 'CHANGE_ME', 'REPLACE_ME', 'REPLACEME')
+
+
+def is_known_default_password(value):
+    """Return True if value is empty, a well-known default password, or an obvious placeholder."""
+    if value is None:
+        return True
+    stripped = str(value).strip()
+    return (
+        (len(stripped) == 0)
+        or (stripped in KNOWN_DEFAULT_PASSWORDS)
+        or stripped.upper().startswith(KNOWN_DEFAULT_PASSWORD_PLACEHOLDER_PREFIXES)
+    )
+
+
+def is_known_default_password_hash(hashValue, opensslBin='openssl'):
+    """Return True if hashValue is a crypt(3)-style ($1$/$5$/$6$) or bcrypt ($2a$/$2b$/$2y$) hash
+    of a well-known default password (or, for bcrypt, of the empty string).
+
+    Candidates which cannot be verified (unknown hash format, or bcrypt without the bcrypt module)
+    are treated as not-known-default."""
+    if not hashValue:
+        return False
+    hashValue = str(hashValue).strip()
+
+    parts = hashValue.split('$')
+    if (len(parts) == 4) and (parts[0] == '') and (parts[1] in ('1', '5', '6')) and parts[2]:
+        for candidate in KNOWN_DEFAULT_PASSWORDS:
+            try:
+                retcode, output = run_process(
+                    [opensslBin, 'passwd', f'-{parts[1]}', '-salt', parts[2], '-stdin'],
+                    stdin=candidate,
+                    stderr=False,
+                )
+            except Exception:
+                return False
+            if (retcode == 0) and output and hmac.compare_digest(output[0].strip(), hashValue):
+                return True
+        return False
+
+    if (len(parts) == 4) and (parts[0] == '') and (parts[1] in ('2a', '2b', '2y')):
+        try:
+            import bcrypt
+        except ImportError:
+            return False
+        for candidate in list(KNOWN_DEFAULT_PASSWORDS) + ['']:
+            try:
+                if bcrypt.checkpw(candidate.encode('utf-8'), hashValue.encode('utf-8')):
+                    return True
+            except ValueError:
+                return False
+        return False
+
+    return False
 
 
 def openssl_self_signed_keygen(

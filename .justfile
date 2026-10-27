@@ -232,6 +232,14 @@ config-nocap:
 auth-setup:
   #!/usr/bin/env bash
   ( [[ -n "${VERBOSE}" ]] && [[ "${VERBOSE}" != "false" ]] && [[ "${VERBOSE}" != "0" ]] ) && DEBUG='-vvvv' || DEBUG=''
+  if [[ -z "${AUTH_ADMIN_USERNAME}" ]] || [[ -z "${AUTH_ADMIN_PASSWORD}" ]]; then
+    echo "AUTH_ADMIN_USERNAME and AUTH_ADMIN_PASSWORD must be set (in your local .envrc, not .envrc.example) before running auth-setup" >&2
+    exit 1
+  fi
+  if (( ${#AUTH_ADMIN_PASSWORD} < 8 )); then
+    echo "AUTH_ADMIN_PASSWORD must be at least 8 characters" >&2
+    exit 1
+  fi
   ./scripts/auth_setup ${DEBUG} --auth-noninteractive true \
     --file "${MALCOLM_COMPOSE_FILE:-docker-compose.yml}" \
     --environment-dir "${MALCOLM_CONFIG_DIR:-config}" \
@@ -247,7 +255,7 @@ auth-setup:
     --auth-admin-username "${AUTH_ADMIN_USERNAME}" \
     --auth-admin-password-openssl "$(echo -n "${AUTH_ADMIN_PASSWORD}" | openssl passwd -6 --stdin)" \
     --auth-admin-password-htpasswd "$(echo -n "${AUTH_ADMIN_PASSWORD}" | htpasswd -i -n -B username | cut -d: -f2 | head -n 1)" \
-    --auth-arkime-password "${AUTH_ARKIME_PASSWORD:-Malcolm}" \
+    --auth-arkime-password "${AUTH_ARKIME_PASSWORD}" \
     --auth-generate-webcerts "${AUTH_GENERATE_WEBCERTS:-true}" \
     --auth-generate-fwcerts "${AUTH_GENERATE_FWCERTS:-true}" \
     --auth-keycloak-realm "${AUTH_KEYCLOAK_REALM:-master}" \

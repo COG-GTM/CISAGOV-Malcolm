@@ -3,6 +3,11 @@
 #   and ./scripts/auth_setup. This will all likely be made obsolete when cisagov/Malcolm#395
 #   is complete. This hasn't been exhaustively tested, so it's recommended more for
 #   development convenience than it is for production use.
+#
+# SECURITY: the AUTH_* password variables below are intentionally left blank. This file is
+#   public, so any value committed here would be a well-known default credential. Set unique
+#   values in your local (untracked) .envrc before running `just auth-setup`; `auth_setup`
+#   refuses to provision empty or well-known default passwords noninteractively.
 
 export MALCOLM_COMPOSE_FILE=$PWD/docker-compose.yml
 export MALCOLM_CONFIG_DIR=$PWD/config
@@ -114,11 +119,15 @@ export EXTRA_TAGS=
 # auth configuration variables
 export AUTH_METHOD=basic
 export ROLE_BASED_ACCESS=false
-export AUTH_ADMIN_USERNAME=maltest
-export AUTH_ADMIN_PASSWORD=M@lc0lm
-export AUTH_ARKIME_PASSWORD=Malcolm
+# administrator username/password for basic HTTP authentication (required, must be set locally)
+export AUTH_ADMIN_USERNAME=
+export AUTH_ADMIN_PASSWORD=
+# Arkime viewer cluster password hash secret; leave blank to retain the existing secret or
+#   generate a random one (must match on Malcolm and any Hedgehog Linux sensors forwarding to it)
+export AUTH_ARKIME_PASSWORD=
 export AUTH_KEYCLOAK_BOOTSTRAP_USERNAME=bootstrap
-export AUTH_KEYCLOAK_BOOTSTRAP_PASSWORD=M@lc0lm
+# temporary Keycloak admin bootstrap password (required when AUTH_METHOD=keycloak; must be set locally)
+export AUTH_KEYCLOAK_BOOTSTRAP_PASSWORD=
 export AUTH_GENERATE_WEBCERTS=true
 export AUTH_GENERATE_FWCERTS=true
 export AUTH_GENERATE_OPENSEARCH_CREDS=true

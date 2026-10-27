@@ -460,7 +460,7 @@ A third possibility is to use a third-party reverse proxy (e.g., [Traefik](https
 
 ## <a name="CommandLineConfig"></a>Command-line arguments
 
-The `./scripts/auth_setup` script can also be run noninteractively which can be useful for scripting Malcolm setup. This behavior can be selected by supplying the `--auth-noninteractive` option on the command line. Running with the `--help` option will list the arguments accepted by the script:
+The `./scripts/auth_setup` script can also be run noninteractively which can be useful for scripting Malcolm setup. This behavior can be selected by supplying the `--auth-noninteractive` option on the command line. When run noninteractively, `auth_setup` will refuse to store an administrator password hash, Arkime password hash secret, or Keycloak bootstrap password that is empty or corresponds to a well-known default or placeholder value (e.g., `M@lc0lm`, `Malcolm`, `changeme`): scripted deployments must supply unique credentials. If `--auth-arkime-password` is omitted, an existing Arkime password hash secret is retained or, if none exists, a random one is generated. Running with the `--help` option will list the arguments accepted by the script:
 
 ```
 $ ./scripts/auth_setup --help
@@ -496,7 +496,7 @@ Authentication Setup:
   --auth-admin-password-htpasswd <string>
                         Administrator password hash from "htpasswd -n -B username | cut -d: -f2" (for --auth-noninteractive)
   --auth-arkime-password <string>
-                        Password hash secret for Arkime viewer cluster (for --auth-noninteractive)
+                        Password hash secret for Arkime viewer cluster (for --auth-noninteractive; if omitted, an existing secret is retained or a random one is generated)
   --auth-generate-webcerts [AUTHGENWEBCERTS]
                         (Re)generate self-signed certificates for HTTPS access (for --auth-noninteractive)
   --auth-generate-fwcerts [AUTHGENFWCERTS]
