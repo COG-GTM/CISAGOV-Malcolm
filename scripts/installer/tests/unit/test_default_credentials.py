@@ -149,7 +149,11 @@ class TestConvenienceConfigShipsNoCredentials(unittest.TestCase):
         self.assertIn('-z "${AUTH_ADMIN_USERNAME}"', recipe)
         # placeholder/default plaintext values are rejected before hashing
         self.assertIn("CHANGEME*", recipe)
-        self.assertIn("M@LC0LM*", recipe)
+        self.assertIn("M@LC0LM|", recipe)
+        # only placeholder spellings are prefix-matched; defaults are matched exactly so that strong
+        #   passwords which merely begin with a common word (e.g. "SecretlyComplex#2026") are accepted
+        for pattern in ("PASSWORD*", "ADMIN*", "SECRET*", "MALCOLM*", "M@LC0LM*"):
+            self.assertNotIn(pattern, recipe)
 
     def test_justfile_auth_setup_admin_guard_is_scoped_to_malcolm_profile(self):
         text = _read(".justfile")

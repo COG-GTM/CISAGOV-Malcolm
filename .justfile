@@ -245,7 +245,7 @@ auth-setup:
       exit 1
     fi
     case "${AUTH_ADMIN_PASSWORD^^}" in
-      CHANGEME*|CHANGE_ME*|REPLACE_ME*|REPLACEME*|M@LC0LM*|MALCOLM*|MALTEST*|PASSWORD*|ADMIN*|SECRET*)
+      CHANGEME*|CHANGE_ME*|REPLACE_ME*|REPLACEME*|M@LC0LM|MALCOLM|MALTEST|PASSWORD|ADMIN|SECRET)
         echo "AUTH_ADMIN_PASSWORD is a placeholder or well-known default value; set a unique password" >&2
         exit 1
         ;;
