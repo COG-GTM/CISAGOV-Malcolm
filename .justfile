@@ -232,6 +232,33 @@ config-nocap:
 auth-setup:
   #!/usr/bin/env bash
   ( [[ -n "${VERBOSE}" ]] && [[ "${VERBOSE}" != "false" ]] && [[ "${VERBOSE}" != "0" ]] ) && DEBUG='-vvvv' || DEBUG=''
+  # a local basic-auth administrator is only provisioned for the "malcolm" profile; when credentials
+  #   are supplied they must be complete, non-trivial, and not a placeholder or well-known default
+  ADMIN_ARGS=()
+  if [[ -n "${AUTH_ADMIN_USERNAME}" ]] || [[ -n "${AUTH_ADMIN_PASSWORD}" ]]; then
+    if [[ -z "${AUTH_ADMIN_USERNAME}" ]] || [[ -z "${AUTH_ADMIN_PASSWORD}" ]]; then
+      echo "AUTH_ADMIN_USERNAME and AUTH_ADMIN_PASSWORD must both be set (in your local .envrc, not .envrc.example)" >&2
+      exit 1
+    fi
+    if (( ${#AUTH_ADMIN_PASSWORD} < 8 )); then
+      echo "AUTH_ADMIN_PASSWORD must be at least 8 characters" >&2
+      exit 1
+    fi
+    case "${AUTH_ADMIN_PASSWORD^^}" in
+      CHANGEME*|CHANGE_ME*|REPLACE_ME*|REPLACEME*|M@LC0LM|MALCOLM|MALTEST|PASSWORD|ADMIN|SECRET)
+        echo "AUTH_ADMIN_PASSWORD is a placeholder or well-known default value; set a unique password" >&2
+        exit 1
+        ;;
+    esac
+    ADMIN_ARGS=(
+      --auth-admin-username "${AUTH_ADMIN_USERNAME}"
+      --auth-admin-password-openssl "$(echo -n "${AUTH_ADMIN_PASSWORD}" | openssl passwd -6 --stdin)"
+      --auth-admin-password-htpasswd "$(echo -n "${AUTH_ADMIN_PASSWORD}" | htpasswd -i -n -B username | cut -d: -f2 | head -n 1)"
+    )
+  elif [[ "${MALCOLM_PROFILE:-malcolm}" == "malcolm" ]] && [[ "${AUTH_METHOD:-basic}" == "basic" ]]; then
+    echo "AUTH_ADMIN_USERNAME and AUTH_ADMIN_PASSWORD must be set (in your local .envrc, not .envrc.example) before running auth-setup with AUTH_METHOD=basic" >&2
+    exit 1
+  fi
   ./scripts/auth_setup ${DEBUG} --auth-noninteractive true \
     --file "${MALCOLM_COMPOSE_FILE:-docker-compose.yml}" \
     --environment-dir "${MALCOLM_CONFIG_DIR:-config}" \
@@ -244,10 +271,8 @@ auth-setup:
     --auth-generate-valkey-password "${AUTH_GENERATE_VALKEY_PASSWORD:-true}" \
     --auth-generate-postgres-password "${AUTH_GENERATE_POSTGRES_PASSWORD:-false}" \
     --auth-generate-keycloak-db-password "${AUTH_GENERATE_KEYCLOAK_DB_PASSWORD:-true}" \
-    --auth-admin-username "${AUTH_ADMIN_USERNAME}" \
-    --auth-admin-password-openssl "$(echo -n "${AUTH_ADMIN_PASSWORD}" | openssl passwd -6 --stdin)" \
-    --auth-admin-password-htpasswd "$(echo -n "${AUTH_ADMIN_PASSWORD}" | htpasswd -i -n -B username | cut -d: -f2 | head -n 1)" \
-    --auth-arkime-password "${AUTH_ARKIME_PASSWORD:-Malcolm}" \
+    "${ADMIN_ARGS[@]}" \
+    --auth-arkime-password "${AUTH_ARKIME_PASSWORD}" \
     --auth-generate-webcerts "${AUTH_GENERATE_WEBCERTS:-true}" \
     --auth-generate-fwcerts "${AUTH_GENERATE_FWCERTS:-true}" \
     --auth-keycloak-realm "${AUTH_KEYCLOAK_REALM:-master}" \

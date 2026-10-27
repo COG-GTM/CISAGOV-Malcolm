@@ -107,6 +107,8 @@ from malcolm_utils import (
     get_iterable,
     get_primary_ip,
     get_verbosity_env_var_count,
+    is_known_default_password,
+    is_known_default_password_hash,
     LoadStrIfJson,
     log_level_is_debug,
     openssl_self_signed_keygen,
@@ -1885,7 +1887,7 @@ def authSetup():
                 'arkime',
                 "Store password hash secret for Arkime viewer cluster",
                 False,
-                (not args.cmdAuthSetupNonInteractive) or bool(args.authArkimePassword),
+                True,
                 [],
             ),
             (
@@ -1920,6 +1922,32 @@ def authSetup():
         UserInputDefaultsBehavior.DefaultsPrompt if not args.cmdAuthSetupNonInteractive else noninteractiveBehavior
     )
     authMethodChanged = False
+
+    if args.cmdAuthSetupNonInteractive:
+        # refuse to provision well-known default or placeholder credentials (e.g., values that
+        #   have shipped in example/convenience configuration files) as live credentials
+        if args.authUserName and (args.authPasswordOpenssl or args.authPasswordHtpasswd):
+            try:
+                adminPasswordIsDefault = is_known_default_password_hash(
+                    args.authPasswordOpenssl, opensslBin or 'openssl'
+                ) or is_known_default_password_hash(args.authPasswordHtpasswd)
+            except RuntimeError as e:
+                # fail closed: a hash we cannot check against the known defaults is not stored
+                raise Exception(
+                    f'Refusing to store administrator password: {e}; install the Python bcrypt module or apache2-utils (htpasswd) and retry'
+                )
+            if adminPasswordIsDefault:
+                raise Exception(
+                    'Refusing to store administrator password: the supplied password hash corresponds to an empty, placeholder, or well-known default password; set a unique administrator password'
+                )
+        if args.authArkimePassword and is_known_default_password(args.authArkimePassword):
+            raise Exception(
+                'Refusing to store Arkime password hash secret: the supplied value is a well-known default; set a unique secret or omit --auth-arkime-password to generate one'
+            )
+        if args.authKeycloakBootstrapPassword and is_known_default_password(args.authKeycloakBootstrapPassword):
+            raise Exception(
+                'Refusing to store Keycloak bootstrap password: the supplied value is a well-known default; set a unique bootstrap password'
+            )
 
     try:
         for authItem in authConfigChoices[1:]:
@@ -2621,6 +2649,17 @@ def authSetup():
                                 ('keycloak',),
                             ),
                         )
+                        if (
+                            args.cmdAuthSetupNonInteractive
+                            and (nginxAuthMode == 'keycloak')
+                            and (not args.authKeycloakBootstrapPassword)
+                            and envValues[keycloakEnvFile]['KC_BOOTSTRAP_ADMIN_PASSWORD']
+                            and is_known_default_password(envValues[keycloakEnvFile]['KC_BOOTSTRAP_ADMIN_PASSWORD'])
+                        ):
+                            raise Exception(
+                                'Refusing to retain the existing Keycloak bootstrap password: it is a well-known default; supply a unique --auth-keycloak-bootstrap-password'
+                            )
+
                         # see comment on keyCloakOpts above for definitions
                         for opt in keyCloakOpts:
                             if nginxAuthMode in opt[7]:
@@ -2893,8 +2932,20 @@ def authSetup():
                                 break
                             logging.error("Passwords do not match")
 
-                    if (not arkimePassword) and args.cmdAuthSetupNonInteractive and args.authArkimePassword:
-                        arkimePassword = args.authArkimePassword
+                    if (not arkimePassword) and args.cmdAuthSetupNonInteractive:
+                        if args.authArkimePassword:
+                            arkimePassword = args.authArkimePassword
+                        else:
+                            # no secret supplied: retain an existing non-default secret, otherwise generate a random one
+                            arkimeSecretEnvFile = os.path.join(args.configDir, 'arkime-secret.env')
+                            if os.path.isfile(arkimeSecretEnvFile):
+                                arkimePassword = dotenvImported.dotenv_values(arkimeSecretEnvFile).get(
+                                    'ARKIME_PASSWORD_SECRET', ''
+                                )
+                            if (not arkimePassword) or is_known_default_password(arkimePassword):
+                                arkimePassword = ''.join(
+                                    secrets.choice(string.ascii_letters + string.digits) for i in range(32)
+                                )
 
                     with pushd(args.configDir):
                         UpdateEnvFiles(
@@ -3318,8 +3369,8 @@ def main():
         required=False,
         metavar='<string>',
         type=str,
-        default='Malcolm',
-        help='Password hash secret for Arkime viewer cluster (for --auth-noninteractive)',
+        default='',
+        help='Password hash secret for Arkime viewer cluster (for --auth-noninteractive; if omitted, an existing secret is retained or a random one is generated)',
     )
     authSetupGroup.add_argument(
         '--auth-generate-webcerts',

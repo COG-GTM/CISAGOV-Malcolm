@@ -8,6 +8,7 @@ import fnmatch
 import functools
 import glob
 import hashlib
+import hmac
 import inspect
 import ipaddress
 import json
@@ -556,6 +557,135 @@ def EVP_BytesToKey(key_length: int, iv_length: int, md, salt: bytes, data: bytes
             iv = iv + md_buf2[: iv_length - len(iv)]
 
     return key, iv
+
+
+###################################################################################################
+# Well-known default/placeholder passwords which must never be provisioned as live credentials
+#   (e.g., values that have historically shipped in example/convenience configuration files)
+KNOWN_DEFAULT_PASSWORDS = frozenset(
+    [
+        'M@lc0lm',
+        'Malcolm',
+        'malcolm',
+        'maltest',
+        'admin',
+        'password',
+        'Password',
+        'changeme',
+        'CHANGEME',
+        'CHANGE_ME',
+        'secret',
+    ]
+)
+
+KNOWN_DEFAULT_PASSWORD_PLACEHOLDER_PREFIXES = ('CHANGEME', 'CHANGE_ME', 'REPLACE_ME', 'REPLACEME')
+
+# plaintext candidates tried when checking a *hash*: the defaults above plus the empty string and
+#   common placeholder spellings (a hash can only be matched against an enumerated candidate)
+KNOWN_DEFAULT_PASSWORD_HASH_CANDIDATES = frozenset(
+    list(KNOWN_DEFAULT_PASSWORDS)
+    + [
+        '',
+        'CHANGEME_ADMIN_PASSWORD',
+        'changeme_admin_password',
+        'CHANGE_ME_ADMIN_PASSWORD',
+        'CHANGEME_PASSWORD',
+        'CHANGE_ME_PASSWORD',
+        'REPLACE_ME',
+        'REPLACEME',
+        'changeme123',
+        'password123',
+        'Password1',
+        'Password123',
+        'admin123',
+        'malcolm123',
+        'Malcolm123',
+        'M@lc0lm1',
+        'M@lc0lm!',
+    ]
+)
+
+
+def is_known_default_password(value):
+    """Return True if value is empty, a well-known default password, or an obvious placeholder."""
+    if value is None:
+        return True
+    stripped = str(value).strip()
+    return (
+        (len(stripped) == 0)
+        or (stripped in KNOWN_DEFAULT_PASSWORDS)
+        or stripped.upper().startswith(KNOWN_DEFAULT_PASSWORD_PLACEHOLDER_PREFIXES)
+    )
+
+
+def _bcrypt_hash_matches(hashValue, candidate):
+    """Check a bcrypt hash against a plaintext candidate, using the Python bcrypt module if available
+    and otherwise the htpasswd(1) utility. Raises RuntimeError if neither verifier is available."""
+    try:
+        import bcrypt
+    except ImportError:
+        bcrypt = None
+
+    if bcrypt is not None:
+        try:
+            return bcrypt.checkpw(candidate.encode('utf-8'), hashValue.encode('utf-8'))
+        except ValueError:
+            return False
+
+    htpasswdBin = sh_which('htpasswd')
+    if htpasswdBin:
+        with NamedTemporaryFile(mode='w', suffix='.htpasswd', delete=True) as tmpFile:
+            tmpFile.write(f'u:{hashValue}\n')
+            tmpFile.flush()
+            # -i reads the candidate from stdin so it never appears in the process argument list; the
+            #   trailing newline guarantees a stdin pipe is opened even for the empty candidate
+            retcode, _ = run_process([htpasswdBin, '-i', '-v', tmpFile.name, 'u'], stdin=candidate + '\n', stderr=False)
+            # htpasswd exits 0 on match and 3 on mismatch; anything else means it could not verify
+            if retcode == 0:
+                return True
+            elif retcode == 3:
+                return False
+            raise RuntimeError(f'unable to verify bcrypt password hash: htpasswd exited with code {retcode}')
+
+    raise RuntimeError(
+        'unable to verify bcrypt password hash: neither the Python bcrypt module nor the htpasswd utility is available'
+    )
+
+
+def is_known_default_password_hash(hashValue, opensslBin='openssl'):
+    """Return True if hashValue is a crypt(3)-style ($1$/$5$/$6$) or bcrypt ($2a$/$2b$/$2y$) hash
+    of a well-known default/placeholder password or of the empty string.
+
+    Hashes in an unrecognized format are treated as not-known-default. A bcrypt hash which cannot be
+    verified (no bcrypt module and no htpasswd) raises RuntimeError so that callers fail closed."""
+    if not hashValue:
+        return False
+    hashValue = str(hashValue).strip()
+
+    parts = hashValue.split('$')
+    if (len(parts) == 4) and (parts[0] == '') and (parts[1] in ('1', '5', '6')) and parts[2]:
+        for candidate in KNOWN_DEFAULT_PASSWORD_HASH_CANDIDATES:
+            if not candidate:
+                continue
+            try:
+                retcode, output = run_process(
+                    [opensslBin, 'passwd', f'-{parts[1]}', '-salt', parts[2], '-stdin'],
+                    stdin=candidate,
+                    stderr=False,
+                )
+            except Exception:
+                return False
+            if (retcode == 0) and output and hmac.compare_digest(output[0].strip(), hashValue):
+                return True
+        return False
+
+    if (len(parts) == 4) and (parts[0] == '') and (parts[1] in ('2a', '2b', '2y')):
+        for candidate in KNOWN_DEFAULT_PASSWORD_HASH_CANDIDATES:
+            if _bcrypt_hash_matches(hashValue, candidate):
+                return True
+        return False
+
+    return False
 
 
 def openssl_self_signed_keygen(

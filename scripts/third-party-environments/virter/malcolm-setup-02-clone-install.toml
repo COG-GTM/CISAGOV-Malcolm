@@ -72,13 +72,14 @@ if [[ $- == *i* ]] && [[ -d ~/Malcolm ]] &&  [[ ! -f ~/Malcolm/.configured ]]; t
     python3 ./scripts/configure --non-interactive --import-malcolm-config-file "${SETTINGS_FILE}"
     rm -f "${SETTINGS_FILE}"
 
-    # username: analyst
-    # password: M@lc0lm
+    # generate a random administrator password for this instance (printed once below)
+    MALCOLM_ADMIN_USERNAME=analyst
+    MALCOLM_ADMIN_PASSWORD="$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 16)"
     python3 ./scripts/auth_setup \
         --auth-noninteractive \
-        --auth-admin-username analyst \
-        --auth-admin-password-openssl '$1$owXoS5pf$YesZKhhWS0d3zVUUhdcef0' \
-        --auth-admin-password-htpasswd '$2y$05$a8jiJsLZ1mFnt5srJD3HAOKC8IUaZcOlsqp8txBlmMjW6wUXUtN3S' \
+        --auth-admin-username "${MALCOLM_ADMIN_USERNAME}" \
+        --auth-admin-password-openssl "$(echo -n "${MALCOLM_ADMIN_PASSWORD}" | openssl passwd -6 -stdin)" \
+        --auth-admin-password-htpasswd "$(echo -n "${MALCOLM_ADMIN_PASSWORD}" | htpasswd -i -n -B "${MALCOLM_ADMIN_USERNAME}" | cut -d: -f2 | head -n 1)" \
         --auth-generate-webcerts \
         --auth-generate-fwcerts \
         --auth-generate-netbox-passwords \
@@ -91,7 +92,11 @@ if [[ $- == *i* ]] && [[ -d ~/Malcolm ]] &&  [[ ! -f ~/Malcolm/.configured ]]; t
 
     popd >/dev/null 2>&1
     clear
-    cat << 'EOT'
+    cat << EOT
+
+Malcolm administrator credentials for this instance (save these now, they are not shown again):
+  username: ${MALCOLM_ADMIN_USERNAME}
+  password: ${MALCOLM_ADMIN_PASSWORD}
 
 To start, stop, restart, etc. Malcolm:
   Use the control scripts in the "~/Malcolm/scripts/" directory:
@@ -105,6 +110,7 @@ To start, stop, restart, etc. Malcolm:
 Malcolm services can be accessed at https://<IP or hostname>/
 
 EOT
+    unset MALCOLM_ADMIN_PASSWORD
 fi
 EOF
 
