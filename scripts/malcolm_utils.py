@@ -639,7 +639,12 @@ def _bcrypt_hash_matches(hashValue, candidate):
             tmpFile.flush()
             # -i reads the candidate from stdin so it never appears in the process argument list
             retcode, _ = run_process([htpasswdBin, '-i', '-v', tmpFile.name, 'u'], stdin=candidate, stderr=False)
-            return retcode == 0
+            # htpasswd exits 0 on match and 3 on mismatch; anything else means it could not verify
+            if retcode == 0:
+                return True
+            elif retcode == 3:
+                return False
+            raise RuntimeError(f'unable to verify bcrypt password hash: htpasswd exited with code {retcode}')
 
     raise RuntimeError(
         'unable to verify bcrypt password hash: neither the Python bcrypt module nor the htpasswd utility is available'
