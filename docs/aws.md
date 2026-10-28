@@ -694,7 +694,7 @@ $ ./Malcolm/scripts/start -f "${KUBECONFIG:-$HOME/.kube/config}" \
     * The load balancers created by the manifests below only accept connections from the networks listed in the following two variables (comma-separated lists of IPv4 [CIDR](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-cidr-blocks.html) blocks); connections from any other address are rejected by the load balancers' [security groups](https://docs.aws.amazon.com/vpc/latest/userguide/security-group-rules.html).
         - `MALCOLM_CLIENT_CIDRS` lists the networks of the users who will connect to Malcolm's [web interface](quickstart.md#UserInterfaceURLs) (`443/tcp`) and OpenSearch API (`9200/tcp`)
         - `MALCOLM_SENSOR_CIDRS` lists the networks of the [Hedgehog Linux](hedgehog.md) sensors and other remote log forwarders which will connect to Malcolm's [`443`, `9200`, `5044` and `5045`](malcolm-hedgehog-e2e-iso-install.md#HedgehogMalcolmPorts) TCP ports. If no remote sensors will forward data to this Malcolm instance, set it to the same value as `MALCOLM_CLIENT_CIDRS`.
-    * Replace the example values below with the actual public address(es) of your users and sensors. Both variables must be set to non-empty values: an empty value is treated by the AWS Load Balancer Controller as `0.0.0.0/0` (i.e., open to the entire internet).
+    * Replace the example values below with the actual public address(es) of your users and sensors. Both variables must be set to non-empty values: the manifests are written so that an unset variable renders as invalid YAML and `kubectl apply` refuses the manifest, rather than creating a load balancer that is open to the entire internet (`0.0.0.0/0`).
 
     ```bash
     $ export MALCOLM_CLIENT_CIDRS="203.0.113.0/24"
