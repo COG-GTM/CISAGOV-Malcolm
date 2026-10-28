@@ -1,3 +1,17 @@
+# Access to the load balancers created by this manifest is restricted to the
+# networks listed in the following variables (comma-separated IPv4 CIDRs,
+# substituted by envsubst along with CERT_ARN and MALCOLM_HOST):
+#
+#   MALCOLM_CLIENT_CIDRS - networks of users who connect to Malcolm's web
+#                          interface (443/tcp) and OpenSearch API (9200/tcp)
+#   MALCOLM_SENSOR_CIDRS - networks of Hedgehog Linux sensors and other remote
+#                          log forwarders, which reach Malcolm's web interface
+#                          (443/tcp), OpenSearch (9200/tcp), Logstash (5044/tcp)
+#                          and the JSON-over-TCP listener (5045/tcp)
+#
+# Both variables must be set to non-empty values before applying this manifest;
+# an empty value is treated by the AWS Load Balancer Controller as 0.0.0.0/0
+# (i.e., open to the entire internet). See docs/aws.md.
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -7,6 +21,7 @@ metadata:
   annotations:
     alb.ingress.kubernetes.io/group.name: "malcolm-ingress-group"
     alb.ingress.kubernetes.io/scheme: "internet-facing"
+    alb.ingress.kubernetes.io/inbound-cidrs: "${MALCOLM_CLIENT_CIDRS},${MALCOLM_SENSOR_CIDRS}"
     alb.ingress.kubernetes.io/target-type: "ip"
     alb.ingress.kubernetes.io/ip-address-type: "ipv4"
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
@@ -39,6 +54,7 @@ metadata:
   annotations:
     alb.ingress.kubernetes.io/group.name: "malcolm-ingress-group"
     alb.ingress.kubernetes.io/scheme: "internet-facing"
+    alb.ingress.kubernetes.io/inbound-cidrs: "${MALCOLM_CLIENT_CIDRS},${MALCOLM_SENSOR_CIDRS}"
     alb.ingress.kubernetes.io/target-type: "ip"
     alb.ingress.kubernetes.io/ip-address-type: "ipv4"
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS": 9200}]'
@@ -71,8 +87,10 @@ metadata:
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-type: "external"
     service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-target-group-attributes: "preserve_client_ip.enabled=true"
 spec:
   type: LoadBalancer
+  loadBalancerSourceRanges: [${MALCOLM_CLIENT_CIDRS}, ${MALCOLM_SENSOR_CIDRS}]
   selector:
     app: nginx-proxy
   ports:
@@ -96,8 +114,11 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
     service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
     service.beta.kubernetes.io/aws-load-balancer-manage-backend-security-group-rules: "true"
+    # client IP preservation is required for loadBalancerSourceRanges to be enforced on NLBs with "ip" targets
+    service.beta.kubernetes.io/aws-load-balancer-target-group-attributes: "preserve_client_ip.enabled=true"
 spec:
   type: LoadBalancer
+  loadBalancerSourceRanges: [${MALCOLM_SENSOR_CIDRS}]
   selector:
     app: logstash
   ports:
@@ -115,8 +136,11 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
     service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
     service.beta.kubernetes.io/aws-load-balancer-manage-backend-security-group-rules: "true"
+    # client IP preservation is required for loadBalancerSourceRanges to be enforced on NLBs with "ip" targets
+    service.beta.kubernetes.io/aws-load-balancer-target-group-attributes: "preserve_client_ip.enabled=true"
 spec:
   type: LoadBalancer
+  loadBalancerSourceRanges: [${MALCOLM_SENSOR_CIDRS}]
   selector:
     app: filebeat
   ports:
