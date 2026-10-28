@@ -690,13 +690,24 @@ $ ./Malcolm/scripts/start -f "${KUBECONFIG:-$HOME/.kube/config}" \
       --query "Certificate.Status"
     ```
 
+* Define the networks allowed to connect to Malcolm's load balancers
+    * The load balancers created by the manifests below only accept connections from the networks listed in the following two variables (comma-separated lists of IPv4 [CIDR](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-cidr-blocks.html) blocks); connections from any other address are rejected by the load balancers' [security groups](https://docs.aws.amazon.com/vpc/latest/userguide/security-group-rules.html).
+        - `MALCOLM_CLIENT_CIDRS` lists the networks of the users who will connect to Malcolm's [web interface](quickstart.md#UserInterfaceURLs) (`443/tcp`) and OpenSearch API (`9200/tcp`)
+        - `MALCOLM_SENSOR_CIDRS` lists the networks of the [Hedgehog Linux](hedgehog.md) sensors and other remote log forwarders which will connect to Malcolm's [`443`, `9200`, `5044` and `5045`](malcolm-hedgehog-e2e-iso-install.md#HedgehogMalcolmPorts) TCP ports. If no remote sensors will forward data to this Malcolm instance, set it to the same value as `MALCOLM_CLIENT_CIDRS`.
+    * Replace the example values below with the actual public address(es) of your users and sensors. Both variables must be set to non-empty values: the manifests are written so that an unset variable renders as invalid YAML and `kubectl apply` refuses the manifest, rather than creating a load balancer that is open to the entire internet (`0.0.0.0/0`).
+
+    ```bash
+    $ export MALCOLM_CLIENT_CIDRS="203.0.113.0/24"
+    $ export MALCOLM_SENSOR_CIDRS="198.51.100.10/32,198.51.100.11/32"
+    ```
+
 * Create the load balancer and access Malcolm's web interface
     * The `LOGSTASH_HOSTNAME` and `FILEBEAT_HOSTNAME` commands below can be ignored if you did not configure allowing incoming TCP connections from remote sensors.
     * If using only the automatically-generated ALB hostnames to connect to Malcolm:
-        * Apply [`99-ingress-aws-alb.yml.example`]({{ site.github.repository_url }}/blob/{{ site.github.build_revision }}/kubernetes/99-ingress-aws-alb.yml.example)
+        * Apply [`99-ingress-aws-alb.yml.example`]({{ site.github.repository_url }}/blob/{{ site.github.build_revision }}/kubernetes/99-ingress-aws-alb.yml.example), substituting the allowed networks defined above
 
         ```bash
-        $ kubectl apply -f ./Malcolm/kubernetes/99-ingress-aws-alb.yml.example
+        $ envsubst < ./Malcolm/kubernetes/99-ingress-aws-alb.yml.example | kubectl apply -f -
 
         $ HTTPS_HOSTNAME=$(kubectl get service malcolm-alb-nginx-proxy -n malcolm -o jsonpath='{.status.loadBalancer.ingress[*].hostname}')
         $ LOGSTASH_HOSTNAME=$(kubectl get service malcolm-nlb-logstash -n malcolm -o jsonpath='{.status.loadBalancer.ingress[*].hostname}')
@@ -710,7 +721,7 @@ $ ./Malcolm/scripts/start -f "${KUBECONFIG:-$HOME/.kube/config}" \
         * Open a [web browser](quickstart.md#UserInterfaceURLs) to connect to the Malcolm cluster (e.g., `https://k8s-malcolm-malcolma-5bec647d77-ab139a8b15d42932.elb.us-east-1.amazonaws.com`)
 
     * If using a custom domain name for Malcolm:
-        * Use [`99-ingress-aws-alb-dns.yml.example`]({{ site.github.repository_url }}/blob/{{ site.github.build_revision }}/kubernetes/99-ingress-aws-alb-dns.yml.example), replacing `malcolm.example.org` with the domain name which will point to the Malcolm instance.
+        * Use [`99-ingress-aws-alb-dns.yml.example`]({{ site.github.repository_url }}/blob/{{ site.github.build_revision }}/kubernetes/99-ingress-aws-alb-dns.yml.example), replacing `malcolm.example.org` with the domain name which will point to the Malcolm instance. The allowed networks defined above are substituted into the manifest along with `CERT_ARN` and `MALCOLM_HOST`.
 
         ```bash
         $ export CERT_ARN
