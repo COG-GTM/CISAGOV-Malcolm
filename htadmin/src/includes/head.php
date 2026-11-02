@@ -27,7 +27,7 @@ error_reporting(E_ALL);
 
 <!-- Latest compiled and minified JavaScript -->
 <script src="script/jquery-1.12.0.min.js"></script>
-<script src="bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+<script src="bootstrap.min.js" integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd" crossorigin="anonymous"></script>
 <script src="script/script.js"></script>
 <link rel="stylesheet" href="styles/style.css">    <!-- These are local (overriding) css styles. -->
 
