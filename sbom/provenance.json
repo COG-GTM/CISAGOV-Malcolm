@@ -1,0 +1,2202 @@
+{
+  "schema": "malcolm-sbom-provenance/1",
+  "generated_at": "2026-11-05T21:06:59Z",
+  "generator": "sbom/generate.sh",
+  "operator": "https://devin-gtm.devinenterprise.com/sessions/b7e8840b17314674822d7577e73cf332",
+  "repository": {
+    "remote": "https://git-manager.devin.ai/proxy/github.com/COG-GTM/CISAGOV-Malcolm.git",
+    "commit": "aa29d73ad5124ab0c6c23257885533faed923601",
+    "ref": "devin/1793909792-sbom-set",
+    "dirty": true
+  },
+  "malcolm_version": "26.09.0",
+  "image_repo": "ghcr.io/idaholab/malcolm",
+  "platform": "linux/amd64",
+  "tools": {
+    "syft": "1.54.1",
+    "osv-scanner": "2.7.0",
+    "python": "Python 3.10.12"
+  },
+  "formats": {
+    "cyclonedx": "1.5 (JSON)",
+    "spdx": "2.3 (JSON)"
+  },
+  "vulnerability_source": "OSV (https://osv.dev) via osv-scanner, queried at generated_at",
+  "deployables": {
+    "api": {
+      "kind": "container-image",
+      "dockerfile": "Dockerfiles/api.Dockerfile",
+      "base_images": [
+        {
+          "image": "python:3-slim-trixie",
+          "stage": "builder"
+        },
+        {
+          "image": "python:3-slim-trixie",
+          "stage": null
+        }
+      ],
+      "source_paths": [
+        "Dockerfiles/api.Dockerfile",
+        "api",
+        "container-health-scripts/api.sh",
+        "scripts/malcolm_constants.py",
+        "scripts/malcolm_utils.py",
+        "shared/bin/docker-uid-gid-setup.sh",
+        "shared/bin/opensearch_status.sh",
+        "shared/bin/service_check_passthrough.sh"
+      ],
+      "views": {
+        "source": {
+          "cyclonedx": "source/api.cdx.json",
+          "spdx": "source/api.spdx.json",
+          "osv": "osv/source/api.osv.json",
+          "components": 11,
+          "components_by_type": {
+            "library": 11
+          },
+          "components_without_purl": 0,
+          "components_without_license": 11,
+          "osv_vulnerabilities": 0,
+          "osv_cves": 0,
+          "osv_by_severity": {},
+          "bom_serial": "urn:uuid:1793d6cf-50a9-4e6c-98b8-c0740b892fa9",
+          "bom_timestamp": "2026-11-05T20:58:50Z"
+        },
+        "built": {
+          "cyclonedx": "built/api.cdx.json",
+          "spdx": "built/api.spdx.json",
+          "osv": "osv/built/api.osv.json",
+          "components": 157,
+          "components_by_type": {
+            "application": 7,
+            "library": 149,
+            "operating-system": 1
+          },
+          "components_without_purl": 7,
+          "components_without_license": 10,
+          "osv_vulnerabilities": 4,
+          "osv_cves": 1,
+          "osv_by_severity": {
+            "critical": 2,
+            "medium": 2
+          },
+          "bom_serial": "urn:uuid:995b0333-cc6b-466d-b3c8-ea950e1fc182",
+          "bom_timestamp": "2026-11-05T20:58:55Z",
+          "image": {
+            "ref": "ghcr.io/idaholab/malcolm/api:26.09.0",
+            "manifest_digest": "sha256:d2d1d6f2df02bbb895e3b2e9c69e47915185e4b3bc79b74797952eee6a312944",
+            "repo_digests": [
+              "ghcr.io/idaholab/malcolm/api@sha256:d2d1d6f2df02bbb895e3b2e9c69e47915185e4b3bc79b74797952eee6a312944"
+            ],
+            "image_id": "sha256:deb607d882271b91ceb7780365a0041560edb16a6f34035a5bb5e4f6f015d735",
+            "architecture": "amd64",
+            "os": "linux",
+            "layers": 16
+          }
+        }
+      }
+    },
+    "arkime": {
+      "kind": "container-image",
+      "dockerfile": "Dockerfiles/arkime.Dockerfile",
+      "base_images": [
+        {
+          "image": "debian:13-slim",
+          "stage": null
+        }
+      ],
+      "source_paths": [
+        "Dockerfiles/arkime.Dockerfile",
+        "arkime/etc",
+        "arkime/requirements.txt",
+        "arkime/rules/single_session_no_spi.yml",
+        "arkime/rules/ssh_truncate.yml",
+        "arkime/rules/tls_truncate.yml",
+        "arkime/scripts",
+        "arkime/supervisord.conf",
+        "arkime/wise/source.zeeklogs.js",
+        "container-health-scripts/arkime.sh",
+        "scripts/malcolm_constants.py",
+        "scripts/malcolm_utils.py",
+        "shared/bin/docker-uid-gid-setup.sh",
+        "shared/bin/nic-capture-setup.sh",
+        "shared/bin/opensearch_status.sh",
+        "shared/bin/pcap_processor.py",
+        "shared/bin/pcap_utils.py",
+        "shared/bin/self_signed_key_gen.sh",
+        "shared/bin/service_check_passthrough.sh",
+        "shared/bin/watch_common.py"
+      ],
+      "views": {
+        "source": {
+          "cyclonedx": "source/arkime.cdx.json",
+          "spdx": "source/arkime.spdx.json",
+          "osv": "osv/source/arkime.osv.json",
+          "components": 4,
+          "components_by_type": {
+            "library": 4
+          },
+          "components_without_purl": 0,
+          "components_without_license": 4,
+          "osv_vulnerabilities": 0,
+          "osv_cves": 0,
+          "osv_by_severity": {},
+          "bom_serial": "urn:uuid:2ee93880-666f-441a-a8d3-5cad99172156",
+          "bom_timestamp": "2026-11-05T20:58:56Z"
+        },
+        "built": {
+          "cyclonedx": "built/arkime.cdx.json",
+          "spdx": "built/arkime.spdx.json",
+          "osv": "osv/built/arkime.osv.json",
+          "components": 1202,
+          "components_by_type": {
+            "library": 1201,
+            "operating-system": 1
+          },
+          "components_without_purl": 1,
+          "components_without_license": 8,
+          "osv_vulnerabilities": 179,
+          "osv_cves": 177,
+          "osv_by_severity": {
+            "critical": 3,
+            "high": 48,
+            "low": 6,
+            "medium": 65,
+            "unknown": 70
+          },
+          "bom_serial": "urn:uuid:f8b05e3e-e075-4a21-bc80-d6753d9a4b70",
+          "bom_timestamp": "2026-11-05T20:59:17Z",
+          "image": {
+            "ref": "ghcr.io/idaholab/malcolm/arkime:26.09.0",
+            "manifest_digest": "sha256:f9aa3e5632b69183fb406f06294d8de301f09ebbd525dc212717eff055506b13",
+            "repo_digests": [
+              "ghcr.io/idaholab/malcolm/arkime@sha256:f9aa3e5632b69183fb406f06294d8de301f09ebbd525dc212717eff055506b13"
+            ],
+            "image_id": "sha256:9e038e3b23f2d0b4d6abb73cf0e841b6f705b853ef1f78d904ada86e2d6c664b",
+            "architecture": "amd64",
+            "os": "linux",
+            "layers": 23
+          }
+        }
+      }
+    },
+    "dashboards-helper": {
+      "kind": "container-image",
+      "dockerfile": "Dockerfiles/dashboards-helper.Dockerfile",
+      "base_images": [
+        {
+          "image": "debian:13-slim",
+          "stage": null
+        }
+      ],
+      "source_paths": [
+        "Dockerfiles/dashboards-helper.Dockerfile",
+        "container-health-scripts/dashboards-helper.sh",
+        "dashboards/alerting",
+        "dashboards/anomaly_detectors",
+        "dashboards/dashboards",
+        "dashboards/maps",
+        "dashboards/notifications",
+        "dashboards/requirements.txt",
+        "dashboards/scripts",
+        "dashboards/supervisord.conf",
+        "dashboards/templates",
+        "scripts/malcolm_constants.py",
+        "scripts/malcolm_utils.py",
+        "shared/bin/docker-uid-gid-setup.sh",
+        "shared/bin/opensearch_status.sh",
+        "shared/bin/service_check_passthrough.sh"
+      ],
+      "views": {
+        "source": {
+          "cyclonedx": "source/dashboards-helper.cdx.json",
+          "spdx": "source/dashboards-helper.spdx.json",
+          "osv": "osv/source/dashboards-helper.osv.json",
+          "components": 2,
+          "components_by_type": {
+            "library": 2
+          },
+          "components_without_purl": 0,
+          "components_without_license": 2,
+          "osv_vulnerabilities": 0,
+          "osv_cves": 0,
+          "osv_by_severity": {},
+          "bom_serial": "urn:uuid:6ec8a2e8-715d-449b-8ad6-3f5b6bed6062",
+          "bom_timestamp": "2026-11-05T20:59:30Z"
+        },
+        "built": {
+          "cyclonedx": "built/dashboards-helper.cdx.json",
+          "spdx": "built/dashboards-helper.spdx.json",
+          "osv": "osv/built/dashboards-helper.osv.json",
+          "components": 195,
+          "components_by_type": {
+            "library": 194,
+            "operating-system": 1
+          },
+          "components_without_purl": 1,
+          "components_without_license": 45,
+          "osv_vulnerabilities": 32,
+          "osv_cves": 23,
+          "osv_by_severity": {
+            "critical": 2,
+            "high": 4,
+            "low": 2,
+            "medium": 8,
+            "unknown": 35
+          },
+          "bom_serial": "urn:uuid:b3f3e10c-72d9-46ff-8a63-0cbbe22e9af4",
+          "bom_timestamp": "2026-11-05T20:59:37Z",
+          "image": {
+            "ref": "ghcr.io/idaholab/malcolm/dashboards-helper:26.09.0",
+            "manifest_digest": "sha256:b131ba6c79cfa3c85d20d86d09b91719e7acb0f92490cb5edd304604ee5f374c",
+            "repo_digests": [
+              "ghcr.io/idaholab/malcolm/dashboards-helper@sha256:b131ba6c79cfa3c85d20d86d09b91719e7acb0f92490cb5edd304604ee5f374c"
+            ],
+            "image_id": "sha256:137298302ed8337d27e22d21ac5b941aa621b27d72a298cf523f8b32f845289c",
+            "architecture": "amd64",
+            "os": "linux",
+            "layers": 18
+          }
+        }
+      }
+    },
+    "dashboards": {
+      "kind": "container-image",
+      "dockerfile": "Dockerfiles/dashboards.Dockerfile",
+      "base_images": [
+        {
+          "image": "opensearchproject/opensearch-dashboards:3.8.0",
+          "stage": "permissions"
+        },
+        {
+          "image": "redhat/ubi9-minimal:latest",
+          "stage": "ubi-micro-build"
+        }
+      ],
+      "source_paths": [
+        "Dockerfiles/dashboards.Dockerfile",
+        "container-health-scripts/dashboards.sh",
+        "dashboards/opensearch_dashboards.yml",
+        "dashboards/scripts/docker_entrypoint.sh",
+        "scripts/malcolm_constants.py",
+        "scripts/malcolm_utils.py",
+        "shared/bin/docker-uid-gid-setup.sh",
+        "shared/bin/service_check_passthrough.sh"
+      ],
+      "views": {
+        "source": {
+          "cyclonedx": "source/dashboards.cdx.json",
+          "spdx": "source/dashboards.spdx.json",
+          "osv": "osv/source/dashboards.osv.json",
+          "components": 0,
+          "components_by_type": {},
+          "components_without_purl": 0,
+          "components_without_license": 0,
+          "osv_vulnerabilities": 0,
+          "osv_cves": 0,
+          "osv_by_severity": {},
+          "bom_serial": "urn:uuid:ef59a3f6-a2b4-4724-aa02-31f4e25f6b9d",
+          "bom_timestamp": "2026-11-05T20:59:39Z"
+        },
+        "built": {
+          "cyclonedx": "built/dashboards.cdx.json",
+          "spdx": "built/dashboards.spdx.json",
+          "osv": "osv/built/dashboards.osv.json",
+          "components": 2202,
+          "components_by_type": {
+            "application": 1,
+            "library": 2200,
+            "operating-system": 1
+          },
+          "components_without_purl": 1,
+          "components_without_license": 57,
+          "osv_vulnerabilities": 88,
+          "osv_cves": 89,
+          "osv_by_severity": {
+            "critical": 6,
+            "high": 59,
+            "low": 12,
+            "medium": 33,
+            "unknown": 5
+          },
+          "bom_serial": "urn:uuid:7a6da382-c67b-47fc-aa03-54bb3d49365b",
+          "bom_timestamp": "2026-11-05T21:00:03Z",
+          "image": {
+            "ref": "ghcr.io/idaholab/malcolm/dashboards:26.09.0",
+            "manifest_digest": "sha256:a1b2b621c936ed3ace0c41e6b089a8531dabe2323f0e6294b4bed71757042e99",
+            "repo_digests": [
+              "ghcr.io/idaholab/malcolm/dashboards@sha256:a1b2b621c936ed3ace0c41e6b089a8531dabe2323f0e6294b4bed71757042e99"
+            ],
+            "image_id": "sha256:1311b776a31bec254d40de7b2a7d385536ad73e82d82b22bf2807b9a04729a5f",
+            "architecture": "amd64",
+            "os": "linux",
+            "layers": 12
+          }
+        }
+      }
+    },
+    "dirinit": {
+      "kind": "container-image",
+      "dockerfile": "Dockerfiles/dirinit.Dockerfile",
+      "base_images": [
+        {
+          "image": "alpine:3.24",
+          "stage": null
+        }
+      ],
+      "source_paths": [
+        "Dockerfiles/dirinit.Dockerfile",
+        "shared/bin/docker-uid-gid-setup.sh"
+      ],
+      "views": {
+        "source": {
+          "cyclonedx": "source/dirinit.cdx.json",
+          "spdx": "source/dirinit.spdx.json",
+          "osv": "osv/source/dirinit.osv.json",
+          "components": 0,
+          "components_by_type": {},
+          "components_without_purl": 0,
+          "components_without_license": 0,
+          "osv_vulnerabilities": 0,
+          "osv_cves": 0,
+          "osv_by_severity": {},
+          "bom_serial": "urn:uuid:d3d3152e-5373-4553-a96b-df722b29d773",
+          "bom_timestamp": "2026-11-05T21:00:07Z"
+        },
+        "built": {
+          "cyclonedx": "built/dirinit.cdx.json",
+          "spdx": "built/dirinit.spdx.json",
+          "osv": "osv/built/dirinit.osv.json",
+          "components": 38,
+          "components_by_type": {
+            "library": 37,
+            "operating-system": 1
+          },
+          "components_without_purl": 1,
+          "components_without_license": 1,
+          "osv_vulnerabilities": 1,
+          "osv_cves": 0,
+          "osv_by_severity": {
+            "high": 1
+          },
+          "bom_serial": "urn:uuid:37d4f8b0-a09a-4900-a234-6bc033211c51",
+          "bom_timestamp": "2026-11-05T21:00:15Z",
+          "image": {
+            "ref": "ghcr.io/idaholab/malcolm/dirinit:26.09.0",
+            "manifest_digest": "sha256:23db75e101b7657d25b19aaf771b7880e69069eb3f007136133150f0b245fc61",
+            "repo_digests": [
+              "ghcr.io/idaholab/malcolm/dirinit@sha256:23db75e101b7657d25b19aaf771b7880e69069eb3f007136133150f0b245fc61"
+            ],
+            "image_id": "sha256:17b522843e0dfba1bf672a93a140018995b635dc5d0d4cf5734137483f467807",
+            "architecture": "amd64",
+            "os": "linux",
+            "layers": 4
+          }
+        }
+      }
+    },
+    "file-upload": {
+      "kind": "container-image",
+      "dockerfile": "Dockerfiles/file-upload.Dockerfile",
+      "base_images": [
+        {
+          "image": "debian:13-slim",
+          "stage": "npmget"
+        },
+        {
+          "image": "debian:13-slim",
+          "stage": "runtime"
+        }
+      ],
+      "source_paths": [
+        "Dockerfiles/file-upload.Dockerfile",
+        "container-health-scripts/upload.sh",
+        "docs/images/logo/Malcolm_banner.png",
+        "file-upload/docker-entrypoint.sh",
+        "file-upload/nginx/sites-available/default",
+        "file-upload/php/config.php",
+        "file-upload/php/php.ini",
+        "file-upload/php/submit.php",
+        "file-upload/requirements.txt",
+        "file-upload/site/index.html",
+        "file-upload/sshd_config",
+        "file-upload/supervisord.conf",
+        "shared/bin/docker-uid-gid-setup.sh",
+        "shared/bin/service_check_passthrough.sh"
+      ],
+      "views": {
+        "source": {
+          "cyclonedx": "source/file-upload.cdx.json",
+          "spdx": "source/file-upload.spdx.json",
+          "osv": "osv/source/file-upload.osv.json",
+          "components": 1,
+          "components_by_type": {
+            "library": 1
+          },
+          "components_without_purl": 0,
+          "components_without_license": 1,
+          "osv_vulnerabilities": 0,
+          "osv_cves": 0,
+          "osv_by_severity": {},
+          "bom_serial": "urn:uuid:49ed6d73-d622-4136-809e-62a4ce1d68ab",
+          "bom_timestamp": "2026-11-05T21:00:16Z"
+        },
+        "built": {
+          "cyclonedx": "built/file-upload.cdx.json",
+          "spdx": "built/file-upload.spdx.json",
+          "osv": "osv/built/file-upload.osv.json",
+          "components": 217,
+          "components_by_type": {
+            "library": 216,
+            "operating-system": 1
+          },
+          "components_without_purl": 1,
+          "components_without_license": 18,
+          "osv_vulnerabilities": 28,
+          "osv_cves": 21,
+          "osv_by_severity": {
+            "high": 4,
+            "low": 2,
+            "medium": 8,
+            "unknown": 14
+          },
+          "bom_serial": "urn:uuid:731d185c-b431-4c65-966b-fdfa78d01937",
+          "bom_timestamp": "2026-11-05T21:00:26Z",
+          "image": {
+            "ref": "ghcr.io/idaholab/malcolm/file-upload:26.09.0",
+            "manifest_digest": "sha256:8c56c3142c8941825cec7b2c1257d693f4cceb4ec00091eed22481b2b3c89673",
+            "repo_digests": [
+              "ghcr.io/idaholab/malcolm/file-upload@sha256:8c56c3142c8941825cec7b2c1257d693f4cceb4ec00091eed22481b2b3c89673"
+            ],
+            "image_id": "sha256:bffacb1b12ee47fec446d7ebf9e3dd5b941ddc4e2a7267f788e474118406350f",
+            "architecture": "amd64",
+            "os": "linux",
+            "layers": 22
+          }
+        }
+      }
+    },
+    "filebeat": {
+      "kind": "container-image",
+      "dockerfile": "Dockerfiles/filebeat.Dockerfile",
+      "base_images": [
+        {
+          "image": "docker.elastic.co/beats/filebeat-oss:9.5.4",
+          "stage": null
+        }
+      ],
+      "source_paths": [
+        "Dockerfiles/filebeat.Dockerfile",
+        "container-health-scripts/filebeat.sh",
+        "filebeat/filebeat-logs.yml",
+        "filebeat/filebeat-nginx.yml",
+        "filebeat/filebeat-syslog-tcp.yml",
+        "filebeat/filebeat-syslog-udp.yml",
+        "filebeat/filebeat-tcp.yml",
+        "filebeat/filebeat-zeek-files-logs.yml",
+        "filebeat/requirements.txt",
+        "filebeat/scripts",
+        "filebeat/supervisord.conf",
+        "scripts/malcolm_constants.py",
+        "scripts/malcolm_utils.py",
+        "scripts/safe-extract.py",
+        "shared/bin/docker-uid-gid-setup.sh",
+        "shared/bin/opensearch_status.sh",
+        "shared/bin/service_check_passthrough.sh",
+        "shared/bin/watch_common.py"
+      ],
+      "views": {
+        "source": {
+          "cyclonedx": "source/filebeat.cdx.json",
+          "spdx": "source/filebeat.spdx.json",
+          "osv": "osv/source/filebeat.osv.json",
+          "components": 6,
+          "components_by_type": {
+            "library": 6
+          },
+          "components_without_purl": 0,
+          "components_without_license": 6,
+          "osv_vulnerabilities": 0,
+          "osv_cves": 0,
+          "osv_by_severity": {},
+          "bom_serial": "urn:uuid:ed1de48a-c6bd-4681-b48b-a68fc0d010c2",
+          "bom_timestamp": "2026-11-05T21:00:30Z"
+        },
+        "built": {
+          "cyclonedx": "built/filebeat.cdx.json",
+          "spdx": "built/filebeat.spdx.json",
+          "osv": "osv/built/filebeat.osv.json",
+          "components": 434,
+          "components_by_type": {
+            "application": 14,
+            "library": 419,
+            "operating-system": 1
+          },
+          "components_without_purl": 15,
+          "components_without_license": 252,
+          "osv_vulnerabilities": 43,
+          "osv_cves": 29,
+          "osv_by_severity": {
+            "high": 12,
+            "low": 4,
+            "medium": 20,
+            "unknown": 58
+          },
+          "bom_serial": "urn:uuid:a8b762fe-1912-4f84-a27a-dc7a2405266d",
+          "bom_timestamp": "2026-11-05T21:00:45Z",
+          "image": {
+            "ref": "ghcr.io/idaholab/malcolm/filebeat-oss:26.09.0",
+            "manifest_digest": "sha256:7bd1b95202a6239b2829a87689068754ded1b47ef4389350c931563b0b531b39",
+            "repo_digests": [
+              "ghcr.io/idaholab/malcolm/filebeat-oss@sha256:7bd1b95202a6239b2829a87689068754ded1b47ef4389350c931563b0b531b39"
+            ],
+            "image_id": "sha256:d96de0e9d0c55da70040fee66d4b2f2e6b4d27a17d5a44e556781f4cbe6d327e",
+            "architecture": "amd64",
+            "os": "linux",
+            "layers": 33
+          }
+        }
+      }
+    },
+    "filescan": {
+      "kind": "container-image",
+      "dockerfile": "Dockerfiles/filescan.Dockerfile",
+      "base_images": [
+        {
+          "image": "python:3.13-slim-trixie",
+          "stage": null
+        }
+      ],
+      "source_paths": [
+        "Dockerfiles/filescan.Dockerfile",
+        "container-health-scripts/filescan.sh",
+        "docs/images/icon/favicon.ico",
+        "docs/images/logo/Malcolm_background.png",
+        "filescan/filescan-config.yml",
+        "filescan/python-filescan",
+        "filescan/scripts/docker-entrypoint.sh",
+        "filescan/scripts/extracted_files_http_server.py",
+        "filescan/scripts/web-ui-asset-download.sh",
+        "filescan/supervisord.conf",
+        "nginx/landingpage/css",
+        "nginx/landingpage/js",
+        "scripts/malcolm_constants.py",
+        "scripts/malcolm_utils.py",
+        "shared/bin/docker-uid-gid-setup.sh",
+        "shared/bin/prune_files.sh",
+        "shared/bin/service_check_passthrough.sh",
+        "shared/bin/watch_common.py"
+      ],
+      "views": {
+        "source": {
+          "cyclonedx": "source/filescan.cdx.json",
+          "spdx": "source/filescan.spdx.json",
+          "osv": "osv/source/filescan.osv.json",
+          "components": 19,
+          "components_by_type": {
+            "library": 19
+          },
+          "components_without_purl": 0,
+          "components_without_license": 19,
+          "osv_vulnerabilities": 1,
+          "osv_cves": 0,
+          "osv_by_severity": {
+            "low": 1
+          },
+          "bom_serial": "urn:uuid:6ca4d3a1-86a0-4079-bd64-d54e0c04823c",
+          "bom_timestamp": "2026-11-05T21:00:47Z"
+        },
+        "built": {
+          "cyclonedx": "built/filescan.cdx.json",
+          "spdx": "built/filescan.spdx.json",
+          "osv": "osv/built/filescan.osv.json",
+          "components": 257,
+          "components_by_type": {
+            "application": 15,
+            "library": 241,
+            "operating-system": 1
+          },
+          "components_without_purl": 15,
+          "components_without_license": 62,
+          "osv_vulnerabilities": 17,
+          "osv_cves": 16,
+          "osv_by_severity": {
+            "low": 1,
+            "unknown": 35
+          },
+          "bom_serial": "urn:uuid:cf6bd109-4410-4516-a159-66211793e067",
+          "bom_timestamp": "2026-11-05T21:00:59Z",
+          "image": {
+            "ref": "ghcr.io/idaholab/malcolm/filescan:26.09.0",
+            "manifest_digest": "sha256:3e56c5a029ba6753fb42174981f5c89e13564115aea907748ecf7aa570951afe",
+            "repo_digests": [
+              "ghcr.io/idaholab/malcolm/filescan@sha256:3e56c5a029ba6753fb42174981f5c89e13564115aea907748ecf7aa570951afe"
+            ],
+            "image_id": "sha256:4ae06c2e5a79ef401d8b73d5fca376372bde6b6a7b9a5e60280d99402eba4e31",
+            "architecture": "amd64",
+            "os": "linux",
+            "layers": 24
+          }
+        }
+      }
+    },
+    "freq": {
+      "kind": "container-image",
+      "dockerfile": "Dockerfiles/freq.Dockerfile",
+      "base_images": [
+        {
+          "image": "debian:13-slim",
+          "stage": null
+        }
+      ],
+      "source_paths": [
+        "Dockerfiles/freq.Dockerfile",
+        "container-health-scripts/freq.sh",
+        "freq-server/requirements.txt",
+        "freq-server/supervisord.conf",
+        "shared/bin/docker-uid-gid-setup.sh",
+        "shared/bin/service_check_passthrough.sh"
+      ],
+      "views": {
+        "source": {
+          "cyclonedx": "source/freq.cdx.json",
+          "spdx": "source/freq.spdx.json",
+          "osv": "osv/source/freq.osv.json",
+          "components": 2,
+          "components_by_type": {
+            "library": 2
+          },
+          "components_without_purl": 0,
+          "components_without_license": 2,
+          "osv_vulnerabilities": 0,
+          "osv_cves": 0,
+          "osv_by_severity": {},
+          "bom_serial": "urn:uuid:d695a626-bc7e-4847-b6f1-c9e6a150a3c2",
+          "bom_timestamp": "2026-11-05T21:01:03Z"
+        },
+        "built": {
+          "cyclonedx": "built/freq.cdx.json",
+          "spdx": "built/freq.spdx.json",
+          "osv": "osv/built/freq.osv.json",
+          "components": 137,
+          "components_by_type": {
+            "library": 136,
+            "operating-system": 1
+          },
+          "components_without_purl": 1,
+          "components_without_license": 2,
+          "osv_vulnerabilities": 14,
+          "osv_cves": 7,
+          "osv_by_severity": {
+            "high": 4,
+            "low": 2,
+            "medium": 8
+          },
+          "bom_serial": "urn:uuid:2519d826-8a96-4978-8590-6273072735db",
+          "bom_timestamp": "2026-11-05T21:01:09Z",
+          "image": {
+            "ref": "ghcr.io/idaholab/malcolm/freq:26.09.0",
+            "manifest_digest": "sha256:a9e291ecdad4a8bc49b635d51dcd8671db445f60c020a3cec16c89c6baf657e8",
+            "repo_digests": [
+              "ghcr.io/idaholab/malcolm/freq@sha256:a9e291ecdad4a8bc49b635d51dcd8671db445f60c020a3cec16c89c6baf657e8"
+            ],
+            "image_id": "sha256:9488aa392b48928bdb70449bd455baf5efb0b35704f8042f40ed7416a65b8baf",
+            "architecture": "amd64",
+            "os": "linux",
+            "layers": 9
+          }
+        }
+      }
+    },
+    "htadmin": {
+      "kind": "container-image",
+      "dockerfile": "Dockerfiles/htadmin.Dockerfile",
+      "base_images": [
+        {
+          "image": "debian:13-slim",
+          "stage": null
+        }
+      ],
+      "source_paths": [
+        "Dockerfiles/htadmin.Dockerfile",
+        "container-health-scripts/htadmin.sh",
+        "docs/images/favicon/favicon.ico",
+        "htadmin/htadmin.sh",
+        "htadmin/nginx/sites-available/default",
+        "htadmin/php/php.ini",
+        "htadmin/src/bootstrap.css",
+        "htadmin/src/bootstrap.min.js",
+        "htadmin/src/includes/head.php",
+        "htadmin/supervisord.conf",
+        "shared/bin/docker-uid-gid-setup.sh",
+        "shared/bin/service_check_passthrough.sh"
+      ],
+      "views": {
+        "source": {
+          "cyclonedx": "source/htadmin.cdx.json",
+          "spdx": "source/htadmin.spdx.json",
+          "osv": "osv/source/htadmin.osv.json",
+          "components": 0,
+          "components_by_type": {},
+          "components_without_purl": 0,
+          "components_without_license": 0,
+          "osv_vulnerabilities": 0,
+          "osv_cves": 0,
+          "osv_by_severity": {},
+          "bom_serial": "urn:uuid:391b1de3-140d-448f-985c-9d7108df2e17",
+          "bom_timestamp": "2026-11-05T21:01:11Z"
+        },
+        "built": {
+          "cyclonedx": "built/htadmin.cdx.json",
+          "spdx": "built/htadmin.spdx.json",
+          "osv": "osv/built/htadmin.osv.json",
+          "components": 212,
+          "components_by_type": {
+            "library": 211,
+            "operating-system": 1
+          },
+          "components_without_purl": 1,
+          "components_without_license": 8,
+          "osv_vulnerabilities": 2,
+          "osv_cves": 1,
+          "osv_by_severity": {
+            "high": 2
+          },
+          "bom_serial": "urn:uuid:3677e06b-2bc8-47bd-af4f-790417d5d675",
+          "bom_timestamp": "2026-11-05T21:01:18Z",
+          "image": {
+            "ref": "ghcr.io/idaholab/malcolm/htadmin:26.09.0",
+            "manifest_digest": "sha256:a1b528e03dd04278b181653e0e6f9143a12b7b0ddbb31bce8224dcd05a0675bf",
+            "repo_digests": [
+              "ghcr.io/idaholab/malcolm/htadmin@sha256:a1b528e03dd04278b181653e0e6f9143a12b7b0ddbb31bce8224dcd05a0675bf"
+            ],
+            "image_id": "sha256:c3c80f1820d510a567bedfaf4b8c25e06c53fbdad24c9ba29f1ef17490fd9ede",
+            "architecture": "amd64",
+            "os": "linux",
+            "layers": 13
+          }
+        }
+      }
+    },
+    "keycloak": {
+      "kind": "container-image",
+      "dockerfile": "Dockerfiles/keycloak.Dockerfile",
+      "base_images": [
+        {
+          "image": "redhat/ubi9:latest",
+          "stage": "ubi-micro-build"
+        },
+        {
+          "image": "quay.io/keycloak/keycloak:26.7",
+          "stage": "builder"
+        },
+        {
+          "image": "quay.io/keycloak/keycloak:26.7",
+          "stage": null
+        }
+      ],
+      "source_paths": [
+        "Dockerfiles/keycloak.Dockerfile",
+        "container-health-scripts/keycloak.sh",
+        "keycloak/scripts/docker-entrypoint.sh",
+        "keycloak/scripts/realm-setup.sh",
+        "shared/bin/docker-uid-gid-setup.sh",
+        "shared/bin/service_check_passthrough.sh"
+      ],
+      "views": {
+        "source": {
+          "cyclonedx": "source/keycloak.cdx.json",
+          "spdx": "source/keycloak.spdx.json",
+          "osv": "osv/source/keycloak.osv.json",
+          "components": 0,
+          "components_by_type": {},
+          "components_without_purl": 0,
+          "components_without_license": 0,
+          "osv_vulnerabilities": 0,
+          "osv_cves": 0,
+          "osv_by_severity": {},
+          "bom_serial": "urn:uuid:02db1041-6f02-4cf7-b19f-eed600de1895",
+          "bom_timestamp": "2026-11-05T21:01:20Z"
+        },
+        "built": {
+          "cyclonedx": "built/keycloak.cdx.json",
+          "spdx": "built/keycloak.spdx.json",
+          "osv": "osv/built/keycloak.osv.json",
+          "components": 611,
+          "components_by_type": {
+            "application": 1,
+            "library": 609,
+            "operating-system": 1
+          },
+          "components_without_purl": 1,
+          "components_without_license": 219,
+          "osv_vulnerabilities": 21,
+          "osv_cves": 21,
+          "osv_by_severity": {
+            "critical": 2,
+            "high": 8,
+            "low": 1,
+            "medium": 10
+          },
+          "bom_serial": "urn:uuid:3e42b97c-448a-4d58-83f1-628ed9779c87",
+          "bom_timestamp": "2026-11-05T21:01:40Z",
+          "image": {
+            "ref": "ghcr.io/idaholab/malcolm/keycloak:26.09.0",
+            "manifest_digest": "sha256:27a24287c17d067dd5df4d32a2335deb44b998b9670ea243717f63112ba8c72f",
+            "repo_digests": [
+              "ghcr.io/idaholab/malcolm/keycloak@sha256:27a24287c17d067dd5df4d32a2335deb44b998b9670ea243717f63112ba8c72f"
+            ],
+            "image_id": "sha256:d60bc15a25aabea53540ba0594669aca26afef70668c2d06acd89b4cec13ddcd",
+            "architecture": "amd64",
+            "os": "linux",
+            "layers": 12
+          }
+        }
+      }
+    },
+    "logstash": {
+      "kind": "container-image",
+      "dockerfile": "Dockerfiles/logstash.Dockerfile",
+      "base_images": [
+        {
+          "image": "redhat/ubi10-minimal:latest",
+          "stage": "manuf-builder"
+        },
+        {
+          "image": "docker.elastic.co/logstash/logstash-oss:9.5.4",
+          "stage": null
+        }
+      ],
+      "source_paths": [
+        "Dockerfiles/logstash.Dockerfile",
+        "container-health-scripts/logstash.sh",
+        "logstash/config/log4j2.properties",
+        "logstash/config/logstash.yml",
+        "logstash/maps/conn_states.yaml",
+        "logstash/maps/ftp_result_codes.yaml",
+        "logstash/maps/http_result_codes.yaml",
+        "logstash/maps/ics_macs.yaml",
+        "logstash/maps/ip_protocol_name_to_number.yaml",
+        "logstash/maps/ip_protocol_number_to_name.yaml",
+        "logstash/maps/malcolm_severity.yaml",
+        "logstash/maps/mitre_attack_asset_ics_ids.yaml",
+        "logstash/maps/mitre_attack_asset_ics_names.yaml",
+        "logstash/maps/mitre_attack_tactic_enterprise_ids.yaml",
+        "logstash/maps/mitre_attack_tactic_enterprise_names.yaml",
+        "logstash/maps/mitre_attack_tactic_enterprise_reference.yaml",
+        "logstash/maps/mitre_attack_tactic_ics_ids.yaml",
+        "logstash/maps/mitre_attack_tactic_ics_names.yaml",
+        "logstash/maps/mitre_attack_tactic_ics_reference.yaml",
+        "logstash/maps/mitre_attack_technique_enterprise_ids.yaml",
+        "logstash/maps/mitre_attack_technique_enterprise_names.yaml",
+        "logstash/maps/mitre_attack_technique_enterprise_reference.yaml",
+        "logstash/maps/mitre_attack_technique_ics_ids.yaml",
+        "logstash/maps/mitre_attack_technique_ics_names.yaml",
+        "logstash/maps/mitre_attack_technique_ics_reference.yaml",
+        "logstash/maps/notice_authors.yaml",
+        "logstash/maps/notice_license.yaml",
+        "logstash/maps/notice_reference.yaml",
+        "logstash/maps/ntp_modes.yaml",
+        "logstash/maps/parse_pipelines.yaml",
+        "logstash/maps/service_ports.yaml",
+        "logstash/maps/sip_result_codes.yaml",
+        "logstash/maps/smtp_result_codes.yaml",
+        "logstash/maps/syslog_facility_codes.yaml",
+        "logstash/maps/syslog_severity_levels.yaml",
+        "logstash/maps/tftp_result_codes.yaml",
+        "logstash/maps/vm_macs.yaml",
+        "logstash/maps/winlog_levels_to_name.yaml",
+        "logstash/maps/winlog_levels_to_numbers.yaml",
+        "logstash/maps/zeek_intel_indicator_types.yaml",
+        "logstash/maps/zeek_log_ecs_categories.yaml",
+        "logstash/patterns",
+        "logstash/pipelines",
+        "logstash/requirements.txt",
+        "logstash/ruby",
+        "logstash/scripts/logstash-start.sh",
+        "logstash/scripts/manuf-oui-parse.py",
+        "logstash/supervisord.conf",
+        "scripts/malcolm_constants.py",
+        "scripts/malcolm_utils.py",
+        "shared/bin/docker-uid-gid-setup.sh",
+        "shared/bin/jdk-cacerts-auto-import.sh",
+        "shared/bin/keystore-bootstrap.sh",
+        "shared/bin/opensearch_status.sh",
+        "shared/bin/service_check_passthrough.sh"
+      ],
+      "views": {
+        "source": {
+          "cyclonedx": "source/logstash.cdx.json",
+          "spdx": "source/logstash.spdx.json",
+          "osv": "osv/source/logstash.osv.json",
+          "components": 3,
+          "components_by_type": {
+            "library": 3
+          },
+          "components_without_purl": 0,
+          "components_without_license": 3,
+          "osv_vulnerabilities": 0,
+          "osv_cves": 0,
+          "osv_by_severity": {},
+          "bom_serial": "urn:uuid:4c0d4242-a14b-4cbd-8254-04971655dde2",
+          "bom_timestamp": "2026-11-05T21:01:43Z"
+        },
+        "built": {
+          "cyclonedx": "built/logstash.cdx.json",
+          "spdx": "built/logstash.spdx.json",
+          "osv": "osv/built/logstash.osv.json",
+          "components": 647,
+          "components_by_type": {
+            "application": 11,
+            "library": 635,
+            "operating-system": 1
+          },
+          "components_without_purl": 4,
+          "components_without_license": 146,
+          "osv_vulnerabilities": 60,
+          "osv_cves": 54,
+          "osv_by_severity": {
+            "critical": 1,
+            "high": 28,
+            "low": 3,
+            "medium": 19,
+            "unknown": 22
+          },
+          "bom_serial": "urn:uuid:bef5e59b-892e-49a9-9479-bccf83c1b891",
+          "bom_timestamp": "2026-11-05T21:02:22Z",
+          "image": {
+            "ref": "ghcr.io/idaholab/malcolm/logstash-oss:26.09.0",
+            "manifest_digest": "sha256:0463ab65ec29a9c0738188b5f4b4556c2fc67a6edcd73b8dbf3396395342dd89",
+            "repo_digests": [
+              "ghcr.io/idaholab/malcolm/logstash-oss@sha256:0463ab65ec29a9c0738188b5f4b4556c2fc67a6edcd73b8dbf3396395342dd89"
+            ],
+            "image_id": "sha256:a0e37edd8cdd70427b77ad65f735d86ea9e2ee4f2440e731ddcd1816d9516384",
+            "architecture": "amd64",
+            "os": "linux",
+            "layers": 32
+          }
+        }
+      }
+    },
+    "netbox": {
+      "kind": "container-image",
+      "dockerfile": "Dockerfiles/netbox.Dockerfile",
+      "base_images": [
+        {
+          "image": "netboxcommunity/netbox:v4.6.10",
+          "stage": null
+        }
+      ],
+      "source_paths": [
+        "Dockerfiles/netbox.Dockerfile",
+        "container-health-scripts/netbox.sh",
+        "netbox/config/configuration.py",
+        "netbox/config/extra.py",
+        "netbox/config/logging.py",
+        "netbox/config/plugins.py",
+        "netbox/control-scripts/launch-netbox.sh",
+        "netbox/control-scripts/netbox_init.py",
+        "netbox/control-scripts/netbox_install_plugins.py",
+        "netbox/control-scripts/netbox_superuser_create.py",
+        "netbox/control-scripts/redis_valkey_env_map.sh",
+        "netbox/patch/remove-news-feed.patch",
+        "netbox/preload/custom_fields.yml",
+        "netbox/preload/custom_links.yml",
+        "netbox/preload/device_roles.yml",
+        "netbox/preload/manufacturers.yml",
+        "netbox/preload/service_templates.yml",
+        "netbox/preload/tags.yml",
+        "netbox/requirements.txt",
+        "netbox/supervisord.conf",
+        "scripts/malcolm_constants.py",
+        "scripts/malcolm_utils.py",
+        "shared/bin/docker-uid-gid-setup.sh",
+        "shared/bin/service_check_passthrough.sh"
+      ],
+      "views": {
+        "source": {
+          "cyclonedx": "source/netbox.cdx.json",
+          "spdx": "source/netbox.spdx.json",
+          "osv": "osv/source/netbox.osv.json",
+          "components": 14,
+          "components_by_type": {
+            "library": 14
+          },
+          "components_without_purl": 0,
+          "components_without_license": 14,
+          "osv_vulnerabilities": 75,
+          "osv_cves": 51,
+          "osv_by_severity": {
+            "critical": 10,
+            "high": 47,
+            "low": 1,
+            "medium": 16,
+            "unknown": 1
+          },
+          "bom_serial": "urn:uuid:9459b2ce-a53b-48ee-926d-489815658a46",
+          "bom_timestamp": "2026-11-05T21:02:25Z"
+        },
+        "built": {
+          "cyclonedx": "built/netbox.cdx.json",
+          "spdx": "built/netbox.spdx.json",
+          "osv": "osv/built/netbox.osv.json",
+          "components": 2013,
+          "components_by_type": {
+            "application": 14,
+            "library": 1998,
+            "operating-system": 1
+          },
+          "components_without_purl": 15,
+          "components_without_license": 1644,
+          "osv_vulnerabilities": 403,
+          "osv_cves": 125,
+          "osv_by_severity": {
+            "critical": 42,
+            "high": 161,
+            "low": 26,
+            "medium": 135,
+            "unknown": 88
+          },
+          "bom_serial": "urn:uuid:7a8ddd1f-a4a6-4eaa-a441-5838296dce01",
+          "bom_timestamp": "2026-11-05T21:03:12Z",
+          "image": {
+            "ref": "ghcr.io/idaholab/malcolm/netbox:26.09.0",
+            "manifest_digest": "sha256:e8280275db2c13f68b8da18f4a97805d5d2b7d5b4afd8b198cd854007ca07c33",
+            "repo_digests": [
+              "ghcr.io/idaholab/malcolm/netbox@sha256:e8280275db2c13f68b8da18f4a97805d5d2b7d5b4afd8b198cd854007ca07c33"
+            ],
+            "image_id": "sha256:2374610b39461380237e5b6e074b820e591e3d73db21ff946a51c2ac7b5ffe06",
+            "architecture": "amd64",
+            "os": "linux",
+            "layers": 30
+          }
+        }
+      }
+    },
+    "nginx": {
+      "kind": "container-image",
+      "dockerfile": "Dockerfiles/nginx.Dockerfile",
+      "base_images": [
+        {
+          "image": "ghcr.io/mmguero-dev/jekyll:latest",
+          "stage": "docbuild"
+        },
+        {
+          "image": "alpine:3.24",
+          "stage": "getresty"
+        },
+        {
+          "image": "alpine:3.24",
+          "stage": null
+        }
+      ],
+      "source_paths": [
+        "Dockerfiles/nginx.Dockerfile",
+        "Gemfile",
+        "README.md",
+        "_config.yml",
+        "_includes",
+        "_layouts",
+        "container-health-scripts/nginx.sh",
+        "docs",
+        "docs/images/favicon/apple-touch-icon-precomposed.png",
+        "docs/images/favicon/facebook.png",
+        "docs/images/favicon/favicon144.png",
+        "docs/images/favicon/favicon150.png",
+        "docs/images/favicon/favicon16.png",
+        "docs/images/favicon/favicon192.png",
+        "docs/images/favicon/favicon24.png",
+        "docs/images/favicon/favicon310.png",
+        "docs/images/favicon/favicon32.png",
+        "docs/images/favicon/favicon48.png",
+        "docs/images/favicon/favicon512.png",
+        "docs/images/favicon/favicon64.png",
+        "docs/images/favicon/favicon70.png",
+        "docs/images/icon/favicon.ico",
+        "docs/images/icon/icon.png",
+        "docs/images/icon/icon.svg",
+        "docs/images/icon/icon_dark.png",
+        "docs/images/icon/malcolm_mark_dashboards.svg",
+        "docs/images/logo/Malcolm.svg",
+        "docs/images/logo/Malcolm_background.png",
+        "docs/images/logo/Malcolm_banner.png",
+        "docs/images/logo/Malcolm_outline.svg",
+        "docs/images/logo/Malcolm_outline_banner.png",
+        "docs/images/logo/Malcolm_outline_banner_dark.png",
+        "docs/images/logo/Malcolm_reflection.png",
+        "docs/images/logo/Malcolm_reflection_white.png",
+        "docs/images/logo/malcolm_logo.svg",
+        "nginx/landingpage",
+        "nginx/lua/nginx_auth_helpers.lua",
+        "nginx/lua/test_normalize_uri.lua",
+        "nginx/nginx.conf",
+        "nginx/nginx_arkime_wise.conf",
+        "nginx/nginx_auth_basic.conf",
+        "nginx/nginx_auth_basic_location.conf",
+        "nginx/nginx_auth_disabled.conf",
+        "nginx/nginx_auth_keycloak.conf",
+        "nginx/nginx_auth_keycloak_basic.conf",
+        "nginx/nginx_auth_ldap.conf",
+        "nginx/nginx_csp_framing.conf",
+        "nginx/nginx_dashboards_rewrite_dashboards.conf",
+        "nginx/nginx_dashboards_rewrite_kibana.conf",
+        "nginx/nginx_dashboards_upstream.conf",
+        "nginx/nginx_envs.conf",
+        "nginx/nginx_error_pages.conf",
+        "nginx/nginx_htadmin_global_replacements.conf",
+        "nginx/nginx_htadmin_upstream.conf",
+        "nginx/nginx_idark2dash_rewrite_dashboards.conf",
+        "nginx/nginx_idark2dash_rewrite_kibana.conf",
+        "nginx/nginx_image_aliases.conf",
+        "nginx/nginx_keycloak_location.conf",
+        "nginx/nginx_keycloak_upstream.conf",
+        "nginx/nginx_netbox_location.conf",
+        "nginx/nginx_netbox_upstream.conf",
+        "nginx/nginx_opensearch_api.conf",
+        "nginx/nginx_opensearch_api_501.conf",
+        "nginx/nginx_opensearch_mapi.conf",
+        "nginx/nginx_opensearch_upstream.conf",
+        "nginx/nginx_proxy_forward_headers.conf",
+        "nginx/nginx_readonly.conf",
+        "nginx/nginx_security_headers.conf",
+        "nginx/nginx_ssl_on_config.conf",
+        "nginx/requirements.txt",
+        "nginx/scripts",
+        "nginx/supervisord.conf",
+        "nginx/templates",
+        "shared/bin/docker-uid-gid-setup.sh"
+      ],
+      "views": {
+        "source": {
+          "cyclonedx": "source/nginx.cdx.json",
+          "spdx": "source/nginx.spdx.json",
+          "osv": "osv/source/nginx.osv.json",
+          "components": 1,
+          "components_by_type": {
+            "library": 1
+          },
+          "components_without_purl": 0,
+          "components_without_license": 1,
+          "osv_vulnerabilities": 0,
+          "osv_cves": 0,
+          "osv_by_severity": {},
+          "bom_serial": "urn:uuid:0883981a-9ac8-4992-824f-e13cbb145b7c",
+          "bom_timestamp": "2026-11-05T21:03:18Z"
+        },
+        "built": {
+          "cyclonedx": "built/nginx.cdx.json",
+          "spdx": "built/nginx.spdx.json",
+          "osv": "osv/built/nginx.osv.json",
+          "components": 83,
+          "components_by_type": {
+            "application": 1,
+            "library": 81,
+            "operating-system": 1
+          },
+          "components_without_purl": 1,
+          "components_without_license": 4,
+          "osv_vulnerabilities": 53,
+          "osv_cves": 0,
+          "osv_by_severity": {
+            "critical": 15,
+            "high": 28,
+            "low": 1,
+            "medium": 9
+          },
+          "bom_serial": "urn:uuid:ec254826-d1e7-4b21-a491-4f091dac9fa1",
+          "bom_timestamp": "2026-11-05T21:03:34Z",
+          "image": {
+            "ref": "ghcr.io/idaholab/malcolm/nginx-proxy:26.09.0",
+            "manifest_digest": "sha256:58605c356024cbbd358098d72c784a59a78cad7eba58c35b3d53aec5fcbee3f8",
+            "repo_digests": [
+              "ghcr.io/idaholab/malcolm/nginx-proxy@sha256:58605c356024cbbd358098d72c784a59a78cad7eba58c35b3d53aec5fcbee3f8"
+            ],
+            "image_id": "sha256:e574a4b3b7428f46b5bc2f1c2f00c188ca91f6358519116296451d71edd6293e",
+            "architecture": "amd64",
+            "os": "linux",
+            "layers": 41
+          }
+        }
+      }
+    },
+    "opensearch": {
+      "kind": "container-image",
+      "dockerfile": "Dockerfiles/opensearch.Dockerfile",
+      "base_images": [
+        {
+          "image": "opensearchproject/opensearch:3.8.0",
+          "stage": null
+        }
+      ],
+      "source_paths": [
+        "Dockerfiles/opensearch.Dockerfile",
+        "container-health-scripts/opensearch.sh",
+        "opensearch-config/config/opensearch-security/action_groups.yml",
+        "opensearch-config/config/opensearch-security/allowlist.yml",
+        "opensearch-config/config/opensearch-security/audit.yml",
+        "opensearch-config/config/opensearch-security/config.yml",
+        "opensearch-config/config/opensearch-security/nodes_dn.yml",
+        "opensearch-config/config/opensearch-security/roles.yml",
+        "opensearch-config/config/opensearch-security/roles_mapping.yml.orig",
+        "opensearch-config/config/opensearch-security/tenants.yml",
+        "opensearch-config/config/opensearch-security/whitelist.yml",
+        "opensearch-config/config/opensearch/opensearch.yml",
+        "opensearch-config/scripts/setup-internal-users.sh",
+        "opensearch-config/scripts/setup-post-start.sh",
+        "scripts/malcolm_constants.py",
+        "scripts/malcolm_utils.py",
+        "shared/bin/docker-uid-gid-setup.sh",
+        "shared/bin/jdk-cacerts-auto-import.sh",
+        "shared/bin/keystore-bootstrap.sh",
+        "shared/bin/opensearch_status.sh",
+        "shared/bin/self_signed_key_gen.sh",
+        "shared/bin/service_check_passthrough.sh"
+      ],
+      "views": {
+        "source": {
+          "cyclonedx": "source/opensearch.cdx.json",
+          "spdx": "source/opensearch.spdx.json",
+          "osv": "osv/source/opensearch.osv.json",
+          "components": 0,
+          "components_by_type": {},
+          "components_without_purl": 0,
+          "components_without_license": 0,
+          "osv_vulnerabilities": 0,
+          "osv_cves": 0,
+          "osv_by_severity": {},
+          "bom_serial": "urn:uuid:f7989d5a-25b4-4a78-a3cb-64729840e00c",
+          "bom_timestamp": "2026-11-05T21:03:36Z"
+        },
+        "built": {
+          "cyclonedx": "built/opensearch.cdx.json",
+          "spdx": "built/opensearch.spdx.json",
+          "osv": "osv/built/opensearch.osv.json",
+          "components": 1210,
+          "components_by_type": {
+            "application": 1,
+            "library": 1208,
+            "operating-system": 1
+          },
+          "components_without_purl": 1,
+          "components_without_license": 304,
+          "osv_vulnerabilities": 66,
+          "osv_cves": 65,
+          "osv_by_severity": {
+            "critical": 2,
+            "high": 38,
+            "low": 1,
+            "medium": 33,
+            "unknown": 21
+          },
+          "bom_serial": "urn:uuid:496bd9b0-5513-4875-8984-ed2930255f82",
+          "bom_timestamp": "2026-11-05T21:04:25Z",
+          "image": {
+            "ref": "ghcr.io/idaholab/malcolm/opensearch:26.09.0",
+            "manifest_digest": "sha256:ce69986b9205eba1fefe4b3063f2f9374ea7b01065146af7c7130b8f78df6c54",
+            "repo_digests": [
+              "ghcr.io/idaholab/malcolm/opensearch@sha256:ce69986b9205eba1fefe4b3063f2f9374ea7b01065146af7c7130b8f78df6c54"
+            ],
+            "image_id": "sha256:7a08249147c0e9231c48eb45bdd7f2847ba46e7b4105e45374e92a611a0fb527",
+            "architecture": "amd64",
+            "os": "linux",
+            "layers": 21
+          }
+        }
+      }
+    },
+    "pcap-capture": {
+      "kind": "container-image",
+      "dockerfile": "Dockerfiles/pcap-capture.Dockerfile",
+      "base_images": [
+        {
+          "image": "debian:13-slim",
+          "stage": null
+        }
+      ],
+      "source_paths": [
+        "Dockerfiles/pcap-capture.Dockerfile",
+        "container-health-scripts/pcap-capture.sh",
+        "pcap-capture/requirements.txt",
+        "pcap-capture/scripts/netsniff-roll.sh",
+        "pcap-capture/scripts/supervisor.sh",
+        "pcap-capture/supervisord.conf",
+        "pcap-capture/templates/netsniff.template",
+        "pcap-capture/templates/tcpdump.template",
+        "shared/bin/docker-uid-gid-setup.sh",
+        "shared/bin/netdev-json.sh",
+        "shared/bin/nic-capture-setup.sh",
+        "shared/bin/service_check_passthrough.sh"
+      ],
+      "views": {
+        "source": {
+          "cyclonedx": "source/pcap-capture.cdx.json",
+          "spdx": "source/pcap-capture.spdx.json",
+          "osv": "osv/source/pcap-capture.osv.json",
+          "components": 1,
+          "components_by_type": {
+            "library": 1
+          },
+          "components_without_purl": 0,
+          "components_without_license": 1,
+          "osv_vulnerabilities": 0,
+          "osv_cves": 0,
+          "osv_by_severity": {},
+          "bom_serial": "urn:uuid:38eb38a7-1c2e-4484-bdc2-bd4714f430d6",
+          "bom_timestamp": "2026-11-05T21:04:29Z"
+        },
+        "built": {
+          "cyclonedx": "built/pcap-capture.cdx.json",
+          "spdx": "built/pcap-capture.spdx.json",
+          "osv": "osv/built/pcap-capture.osv.json",
+          "components": 171,
+          "components_by_type": {
+            "library": 170,
+            "operating-system": 1
+          },
+          "components_without_purl": 1,
+          "components_without_license": 23,
+          "osv_vulnerabilities": 19,
+          "osv_cves": 9,
+          "osv_by_severity": {
+            "high": 10,
+            "low": 3,
+            "medium": 10
+          },
+          "bom_serial": "urn:uuid:bf264962-d051-45b6-956d-4b44469fe2a1",
+          "bom_timestamp": "2026-11-05T21:04:34Z",
+          "image": {
+            "ref": "ghcr.io/idaholab/malcolm/pcap-capture:26.09.0",
+            "manifest_digest": "sha256:827e98f350572782dd76a08c2284c6e9c908cd04fa3f64544890a44b725efe20",
+            "repo_digests": [
+              "ghcr.io/idaholab/malcolm/pcap-capture@sha256:827e98f350572782dd76a08c2284c6e9c908cd04fa3f64544890a44b725efe20"
+            ],
+            "image_id": "sha256:fcf6736c81dc03d1482f979ca149f19e88169d5920a77d4436e252bf005711c5",
+            "architecture": "amd64",
+            "os": "linux",
+            "layers": 13
+          }
+        }
+      }
+    },
+    "pcap-monitor": {
+      "kind": "container-image",
+      "dockerfile": "Dockerfiles/pcap-monitor.Dockerfile",
+      "base_images": [
+        {
+          "image": "debian:13-slim",
+          "stage": null
+        }
+      ],
+      "source_paths": [
+        "Dockerfiles/pcap-monitor.Dockerfile",
+        "container-health-scripts/pcap-monitor.sh",
+        "pcap-monitor/requirements.txt",
+        "pcap-monitor/scripts",
+        "pcap-monitor/supervisord.conf",
+        "scripts/malcolm_constants.py",
+        "scripts/malcolm_utils.py",
+        "shared/bin/docker-uid-gid-setup.sh",
+        "shared/bin/pcap_utils.py",
+        "shared/bin/pcap_watcher.py",
+        "shared/bin/service_check_passthrough.sh",
+        "shared/bin/watch_common.py"
+      ],
+      "views": {
+        "source": {
+          "cyclonedx": "source/pcap-monitor.cdx.json",
+          "spdx": "source/pcap-monitor.spdx.json",
+          "osv": "osv/source/pcap-monitor.osv.json",
+          "components": 8,
+          "components_by_type": {
+            "library": 8
+          },
+          "components_without_purl": 0,
+          "components_without_license": 8,
+          "osv_vulnerabilities": 0,
+          "osv_cves": 0,
+          "osv_by_severity": {},
+          "bom_serial": "urn:uuid:f21e42c1-61fd-444b-9110-80c8502288e6",
+          "bom_timestamp": "2026-11-05T21:04:36Z"
+        },
+        "built": {
+          "cyclonedx": "built/pcap-monitor.cdx.json",
+          "spdx": "built/pcap-monitor.spdx.json",
+          "osv": "osv/built/pcap-monitor.osv.json",
+          "components": 186,
+          "components_by_type": {
+            "library": 185,
+            "operating-system": 1
+          },
+          "components_without_purl": 1,
+          "components_without_license": 24,
+          "osv_vulnerabilities": 21,
+          "osv_cves": 9,
+          "osv_by_severity": {
+            "critical": 2,
+            "high": 10,
+            "low": 3,
+            "medium": 10
+          },
+          "bom_serial": "urn:uuid:50a52b25-99d2-4e40-afa2-1b10c0688122",
+          "bom_timestamp": "2026-11-05T21:04:44Z",
+          "image": {
+            "ref": "ghcr.io/idaholab/malcolm/pcap-monitor:26.09.0",
+            "manifest_digest": "sha256:b473c6ac0a78ab5ccda5c80c094b33391e1a0334813ed07dbb9a6356309b898f",
+            "repo_digests": [
+              "ghcr.io/idaholab/malcolm/pcap-monitor@sha256:b473c6ac0a78ab5ccda5c80c094b33391e1a0334813ed07dbb9a6356309b898f"
+            ],
+            "image_id": "sha256:511eb9fb38b08d8fc8782c1a7f16f43a511676fa24e32402330a15f2593b835f",
+            "architecture": "amd64",
+            "os": "linux",
+            "layers": 14
+          }
+        }
+      }
+    },
+    "postgresql": {
+      "kind": "container-image",
+      "dockerfile": "Dockerfiles/postgresql.Dockerfile",
+      "base_images": [
+        {
+          "image": "postgres:18-alpine",
+          "stage": null
+        }
+      ],
+      "source_paths": [
+        "Dockerfiles/postgresql.Dockerfile",
+        "container-health-scripts/postgres.sh",
+        "postgres-scripts/docker-entrypoint-initdb.d/10_noop.sh",
+        "postgres-scripts/docker-entrypoint-startdb.d/10_collation-version-refresh.sh",
+        "postgres-scripts/docker-entrypoint-startdb.d/20_init-db-from-env.sh",
+        "postgres-scripts/docker-entrypoint-startdb.d/30_post-upgrade-tasks.sh",
+        "postgres-scripts/docker-entrypoint-startdb.sh",
+        "postgres-scripts/pg-major-upgrade.sh",
+        "shared/bin/docker-uid-gid-setup.sh",
+        "shared/bin/service_check_passthrough.sh"
+      ],
+      "views": {
+        "source": {
+          "cyclonedx": "source/postgresql.cdx.json",
+          "spdx": "source/postgresql.spdx.json",
+          "osv": "osv/source/postgresql.osv.json",
+          "components": 0,
+          "components_by_type": {},
+          "components_without_purl": 0,
+          "components_without_license": 0,
+          "osv_vulnerabilities": 0,
+          "osv_cves": 0,
+          "osv_by_severity": {},
+          "bom_serial": "urn:uuid:23f35ebc-3ed9-472f-aa7e-c9b7239f5be2",
+          "bom_timestamp": "2026-11-05T21:04:46Z"
+        },
+        "built": {
+          "cyclonedx": "built/postgresql.cdx.json",
+          "spdx": "built/postgresql.spdx.json",
+          "osv": "osv/built/postgresql.osv.json",
+          "components": 82,
+          "components_by_type": {
+            "application": 1,
+            "library": 80,
+            "operating-system": 1
+          },
+          "components_without_purl": 1,
+          "components_without_license": 6,
+          "osv_vulnerabilities": 63,
+          "osv_cves": 61,
+          "osv_by_severity": {
+            "high": 1,
+            "medium": 2,
+            "unknown": 60
+          },
+          "bom_serial": "urn:uuid:456df485-bc12-44da-a923-5b486b03f57f",
+          "bom_timestamp": "2026-11-05T21:04:56Z",
+          "image": {
+            "ref": "ghcr.io/idaholab/malcolm/postgresql:26.09.0",
+            "manifest_digest": "sha256:7c73b7a3735ebe1a716be8f7bcd3d402a57ffbbd369f99a88bdd42e06360d46f",
+            "repo_digests": [
+              "ghcr.io/idaholab/malcolm/postgresql@sha256:7c73b7a3735ebe1a716be8f7bcd3d402a57ffbbd369f99a88bdd42e06360d46f"
+            ],
+            "image_id": "sha256:33169fef43faae1d9f3bc069398eaf4326a4549d6880aec4add630ff5100946d",
+            "architecture": "amd64",
+            "os": "linux",
+            "layers": 17
+          }
+        }
+      }
+    },
+    "strelka-backend": {
+      "kind": "container-image",
+      "dockerfile": "Dockerfiles/strelka-backend.Dockerfile",
+      "base_images": [
+        {
+          "image": "ghcr.io/idaholab/strelka/backend:malcolm",
+          "stage": null
+        }
+      ],
+      "source_paths": [
+        "Dockerfiles/strelka-backend.Dockerfile",
+        "container-health-scripts/strelka-backend.sh",
+        "scripts/malcolm_constants.py",
+        "shared/bin/docker-uid-gid-setup.sh",
+        "shared/bin/service_check_passthrough.sh",
+        "strelka/backend/supervisord.conf",
+        "strelka/backend/yara_rules_setup.sh",
+        "strelka/config/backend",
+        "strelka/docker-entrypoint.sh"
+      ],
+      "views": {
+        "source": {
+          "cyclonedx": "source/strelka-backend.cdx.json",
+          "spdx": "source/strelka-backend.spdx.json",
+          "osv": "osv/source/strelka-backend.osv.json",
+          "components": 0,
+          "components_by_type": {},
+          "components_without_purl": 0,
+          "components_without_license": 0,
+          "osv_vulnerabilities": 0,
+          "osv_cves": 0,
+          "osv_by_severity": {},
+          "bom_serial": "urn:uuid:37c20bc5-a60f-4569-85a5-e14eb811f10c",
+          "bom_timestamp": "2026-11-05T21:05:06Z"
+        },
+        "built": {
+          "cyclonedx": "built/strelka-backend.cdx.json",
+          "spdx": "built/strelka-backend.spdx.json",
+          "osv": "osv/built/strelka-backend.osv.json",
+          "components": 632,
+          "components_by_type": {
+            "application": 27,
+            "library": 604,
+            "operating-system": 1
+          },
+          "components_without_purl": 27,
+          "components_without_license": 88,
+          "osv_vulnerabilities": 383,
+          "osv_cves": 103,
+          "osv_by_severity": {
+            "critical": 32,
+            "high": 149,
+            "low": 25,
+            "medium": 169,
+            "unknown": 38
+          },
+          "bom_serial": "urn:uuid:23abbc26-5447-4650-b22f-e10cfb46a479",
+          "bom_timestamp": "2026-11-05T21:05:45Z",
+          "image": {
+            "ref": "ghcr.io/idaholab/malcolm/strelka-backend:26.09.0",
+            "manifest_digest": "sha256:15752502284066f5e83b6531f469427af1cfeb851129f70eec5a24592ad80515",
+            "repo_digests": [
+              "ghcr.io/idaholab/malcolm/strelka-backend@sha256:15752502284066f5e83b6531f469427af1cfeb851129f70eec5a24592ad80515"
+            ],
+            "image_id": "sha256:3001ff2a33aa89e3cafa18fb9e0b330aa7d8cce7ad45796621c3faefae07dd73",
+            "architecture": "amd64",
+            "os": "linux",
+            "layers": 36
+          }
+        }
+      }
+    },
+    "strelka-frontend": {
+      "kind": "container-image",
+      "dockerfile": "Dockerfiles/strelka-frontend.Dockerfile",
+      "base_images": [
+        {
+          "image": "ghcr.io/idaholab/strelka/frontend:malcolm",
+          "stage": null
+        }
+      ],
+      "source_paths": [
+        "Dockerfiles/strelka-frontend.Dockerfile",
+        "container-health-scripts/strelka-frontend.sh",
+        "shared/bin/docker-uid-gid-setup.sh",
+        "shared/bin/service_check_passthrough.sh",
+        "strelka/config/frontend",
+        "strelka/docker-entrypoint.sh"
+      ],
+      "views": {
+        "source": {
+          "cyclonedx": "source/strelka-frontend.cdx.json",
+          "spdx": "source/strelka-frontend.spdx.json",
+          "osv": "osv/source/strelka-frontend.osv.json",
+          "components": 0,
+          "components_by_type": {},
+          "components_without_purl": 0,
+          "components_without_license": 0,
+          "osv_vulnerabilities": 0,
+          "osv_cves": 0,
+          "osv_by_severity": {},
+          "bom_serial": "urn:uuid:08916589-a59c-4c36-b23d-32c5872d7a2b",
+          "bom_timestamp": "2026-11-05T21:05:52Z"
+        },
+        "built": {
+          "cyclonedx": "built/strelka-frontend.cdx.json",
+          "spdx": "built/strelka-frontend.spdx.json",
+          "osv": "osv/built/strelka-frontend.osv.json",
+          "components": 98,
+          "components_by_type": {
+            "library": 97,
+            "operating-system": 1
+          },
+          "components_without_purl": 1,
+          "components_without_license": 45,
+          "osv_vulnerabilities": 97,
+          "osv_cves": 69,
+          "osv_by_severity": {
+            "critical": 7,
+            "high": 22,
+            "medium": 2,
+            "unknown": 92
+          },
+          "bom_serial": "urn:uuid:5b32a362-bb4e-4870-a537-77fa6163d35f",
+          "bom_timestamp": "2026-11-05T21:05:57Z",
+          "image": {
+            "ref": "ghcr.io/idaholab/malcolm/strelka-frontend:26.09.0",
+            "manifest_digest": "sha256:b6e03852f46a47e24d9d5b08381d6a56f07235f5feea2b65dbb49d143725d7de",
+            "repo_digests": [
+              "ghcr.io/idaholab/malcolm/strelka-frontend@sha256:b6e03852f46a47e24d9d5b08381d6a56f07235f5feea2b65dbb49d143725d7de"
+            ],
+            "image_id": "sha256:bf65a2d42420561ccddb43a7b3a86c09889532c5df6424f32075388e6f72d2f8",
+            "architecture": "amd64",
+            "os": "linux",
+            "layers": 15
+          }
+        }
+      }
+    },
+    "strelka-manager": {
+      "kind": "container-image",
+      "dockerfile": "Dockerfiles/strelka-manager.Dockerfile",
+      "base_images": [
+        {
+          "image": "ghcr.io/idaholab/strelka/manager:malcolm",
+          "stage": null
+        }
+      ],
+      "source_paths": [
+        "Dockerfiles/strelka-manager.Dockerfile",
+        "container-health-scripts/strelka-manager.sh",
+        "shared/bin/docker-uid-gid-setup.sh",
+        "shared/bin/service_check_passthrough.sh",
+        "strelka/config/manager",
+        "strelka/docker-entrypoint.sh"
+      ],
+      "views": {
+        "source": {
+          "cyclonedx": "source/strelka-manager.cdx.json",
+          "spdx": "source/strelka-manager.spdx.json",
+          "osv": "osv/source/strelka-manager.osv.json",
+          "components": 0,
+          "components_by_type": {},
+          "components_without_purl": 0,
+          "components_without_license": 0,
+          "osv_vulnerabilities": 0,
+          "osv_cves": 0,
+          "osv_by_severity": {},
+          "bom_serial": "urn:uuid:95660a02-9983-44fe-8676-2d4837518707",
+          "bom_timestamp": "2026-11-05T21:06:00Z"
+        },
+        "built": {
+          "cyclonedx": "built/strelka-manager.cdx.json",
+          "spdx": "built/strelka-manager.spdx.json",
+          "osv": "osv/built/strelka-manager.osv.json",
+          "components": 88,
+          "components_by_type": {
+            "library": 87,
+            "operating-system": 1
+          },
+          "components_without_purl": 1,
+          "components_without_license": 40,
+          "osv_vulnerabilities": 49,
+          "osv_cves": 21,
+          "osv_by_severity": {
+            "critical": 7,
+            "high": 22,
+            "medium": 2,
+            "unknown": 44
+          },
+          "bom_serial": "urn:uuid:089bd864-886b-415a-81d4-e49f61d8be2d",
+          "bom_timestamp": "2026-11-05T21:06:05Z",
+          "image": {
+            "ref": "ghcr.io/idaholab/malcolm/strelka-manager:26.09.0",
+            "manifest_digest": "sha256:4b2d854fec3d97b2943e61d6356598da49e82bb8b8f6ab0eb849f9eaef4d1c00",
+            "repo_digests": [
+              "ghcr.io/idaholab/malcolm/strelka-manager@sha256:4b2d854fec3d97b2943e61d6356598da49e82bb8b8f6ab0eb849f9eaef4d1c00"
+            ],
+            "image_id": "sha256:a8a431dbdf8083dfa3fde516e193ce658932e0eb3c80272e3a39f0be5ef80957",
+            "architecture": "amd64",
+            "os": "linux",
+            "layers": 10
+          }
+        }
+      }
+    },
+    "suricata": {
+      "kind": "container-image",
+      "dockerfile": "Dockerfiles/suricata.Dockerfile",
+      "base_images": [
+        {
+          "image": "debian:13-slim",
+          "stage": null
+        }
+      ],
+      "source_paths": [
+        "Dockerfiles/suricata.Dockerfile",
+        "container-health-scripts/suricata.sh",
+        "scripts/malcolm_constants.py",
+        "scripts/malcolm_utils.py",
+        "shared/bin/docker-uid-gid-setup.sh",
+        "shared/bin/netdev-json.sh",
+        "shared/bin/pcap_processor.py",
+        "shared/bin/pcap_utils.py",
+        "shared/bin/service_check_passthrough.sh",
+        "suricata/requirements.txt",
+        "suricata/rules-default",
+        "suricata/scripts",
+        "suricata/supervisor-templates/suricata-socket.template",
+        "suricata/supervisord.conf"
+      ],
+      "views": {
+        "source": {
+          "cyclonedx": "source/suricata.cdx.json",
+          "spdx": "source/suricata.spdx.json",
+          "osv": "osv/source/suricata.osv.json",
+          "components": 2,
+          "components_by_type": {
+            "library": 2
+          },
+          "components_without_purl": 0,
+          "components_without_license": 2,
+          "osv_vulnerabilities": 0,
+          "osv_cves": 0,
+          "osv_by_severity": {},
+          "bom_serial": "urn:uuid:67784aff-027d-45e6-bdc0-4acc78f2b0c8",
+          "bom_timestamp": "2026-11-05T21:06:07Z"
+        },
+        "built": {
+          "cyclonedx": "built/suricata.cdx.json",
+          "spdx": "built/suricata.spdx.json",
+          "osv": "osv/built/suricata.osv.json",
+          "components": 307,
+          "components_by_type": {
+            "library": 306,
+            "operating-system": 1
+          },
+          "components_without_purl": 1,
+          "components_without_license": 66,
+          "osv_vulnerabilities": 35,
+          "osv_cves": 25,
+          "osv_by_severity": {
+            "high": 10,
+            "low": 3,
+            "medium": 10,
+            "unknown": 35
+          },
+          "bom_serial": "urn:uuid:5377dcea-1758-4bca-b988-63544a1325df",
+          "bom_timestamp": "2026-11-05T21:06:15Z",
+          "image": {
+            "ref": "ghcr.io/idaholab/malcolm/suricata:26.09.0",
+            "manifest_digest": "sha256:8e8f6b9f299e7b0776682283d26e2df9857a3c1b3d8335488fe9013d68ed21f0",
+            "repo_digests": [
+              "ghcr.io/idaholab/malcolm/suricata@sha256:8e8f6b9f299e7b0776682283d26e2df9857a3c1b3d8335488fe9013d68ed21f0"
+            ],
+            "image_id": "sha256:8281ee9778fc202d025e4e9367ad579e4e3d484513285eb9830f644e3a8b8a21",
+            "architecture": "amd64",
+            "os": "linux",
+            "layers": 17
+          }
+        }
+      }
+    },
+    "valkey": {
+      "kind": "container-image",
+      "dockerfile": "Dockerfiles/valkey.Dockerfile",
+      "base_images": [
+        {
+          "image": "valkey/valkey:8-alpine",
+          "stage": null
+        }
+      ],
+      "source_paths": [
+        "Dockerfiles/valkey.Dockerfile",
+        "container-health-scripts/valkey.sh",
+        "shared/bin/docker-uid-gid-setup.sh",
+        "shared/bin/service_check_passthrough.sh"
+      ],
+      "views": {
+        "source": {
+          "cyclonedx": "source/valkey.cdx.json",
+          "spdx": "source/valkey.spdx.json",
+          "osv": "osv/source/valkey.osv.json",
+          "components": 0,
+          "components_by_type": {},
+          "components_without_purl": 0,
+          "components_without_license": 0,
+          "osv_vulnerabilities": 0,
+          "osv_cves": 0,
+          "osv_by_severity": {},
+          "bom_serial": "urn:uuid:98bdefdd-8eb4-4331-91ee-801b70f5ffb0",
+          "bom_timestamp": "2026-11-05T21:06:17Z"
+        },
+        "built": {
+          "cyclonedx": "built/valkey.cdx.json",
+          "spdx": "built/valkey.spdx.json",
+          "osv": "osv/built/valkey.osv.json",
+          "components": 45,
+          "components_by_type": {
+            "application": 1,
+            "library": 43,
+            "operating-system": 1
+          },
+          "components_without_purl": 1,
+          "components_without_license": 2,
+          "osv_vulnerabilities": 1,
+          "osv_cves": 0,
+          "osv_by_severity": {
+            "high": 1
+          },
+          "bom_serial": "urn:uuid:3902755d-f3df-4c72-b3b7-26c9007faa18",
+          "bom_timestamp": "2026-11-05T21:06:22Z",
+          "image": {
+            "ref": "ghcr.io/idaholab/malcolm/valkey:26.09.0",
+            "manifest_digest": "sha256:fe9db25367b5febbee308bf34c78c3b666f4bd26c3df2e20c79c4094861391ef",
+            "repo_digests": [
+              "ghcr.io/idaholab/malcolm/valkey@sha256:fe9db25367b5febbee308bf34c78c3b666f4bd26c3df2e20c79c4094861391ef"
+            ],
+            "image_id": "sha256:534a5b27e006347af7af82010a8612ef0ca07755dff8827402f87cacc8a35208",
+            "architecture": "amd64",
+            "os": "linux",
+            "layers": 13
+          }
+        }
+      }
+    },
+    "zeek": {
+      "kind": "container-image",
+      "dockerfile": "Dockerfiles/zeek.Dockerfile",
+      "base_images": [
+        {
+          "image": "zeek/zeek:8.2.2",
+          "stage": null
+        }
+      ],
+      "source_paths": [
+        "Dockerfiles/zeek.Dockerfile",
+        "container-health-scripts/zeek.sh",
+        "scripts/malcolm_constants.py",
+        "scripts/malcolm_utils.py",
+        "shared/bin/docker-uid-gid-setup.sh",
+        "shared/bin/netdev-json.sh",
+        "shared/bin/pcap_processor.py",
+        "shared/bin/pcap_utils.py",
+        "shared/bin/service_check_passthrough.sh",
+        "shared/pcaps",
+        "zeek/config/extractor.zeek",
+        "zeek/config/extractor_override.interesting.zeek",
+        "zeek/config/extractor_params.zeek",
+        "zeek/config/guess.zeek",
+        "zeek/config/guess_ics_map.txt",
+        "zeek/config/iana_registry.zeek",
+        "zeek/config/kafka.zeek",
+        "zeek/config/known-routers.zeek",
+        "zeek/config/local.zeek",
+        "zeek/config/login.zeek",
+        "zeek/custom-pkg",
+        "zeek/requirements.txt",
+        "zeek/scripts",
+        "zeek/scripts/zeek_iana_lookup_generator.py",
+        "zeek/scripts/zeek_install_plugins.sh",
+        "zeek/supervisord.conf"
+      ],
+      "views": {
+        "source": {
+          "cyclonedx": "source/zeek.cdx.json",
+          "spdx": "source/zeek.spdx.json",
+          "osv": "osv/source/zeek.osv.json",
+          "components": 6,
+          "components_by_type": {
+            "library": 6
+          },
+          "components_without_purl": 0,
+          "components_without_license": 6,
+          "osv_vulnerabilities": 0,
+          "osv_cves": 0,
+          "osv_by_severity": {},
+          "bom_serial": "urn:uuid:549378e3-b015-4df0-a1db-b482c1f13d5b",
+          "bom_timestamp": "2026-11-05T21:06:23Z"
+        },
+        "built": {
+          "cyclonedx": "built/zeek.cdx.json",
+          "spdx": "built/zeek.spdx.json",
+          "osv": "osv/built/zeek.osv.json",
+          "components": 619,
+          "components_by_type": {
+            "library": 618,
+            "operating-system": 1
+          },
+          "components_without_purl": 1,
+          "components_without_license": 41,
+          "osv_vulnerabilities": 169,
+          "osv_cves": 123,
+          "osv_by_severity": {
+            "critical": 6,
+            "high": 95,
+            "low": 12,
+            "medium": 55,
+            "unknown": 15
+          },
+          "bom_serial": "urn:uuid:184194be-4155-4ba6-888e-cb8a2013bbdd",
+          "bom_timestamp": "2026-11-05T21:06:49Z",
+          "image": {
+            "ref": "ghcr.io/idaholab/malcolm/zeek:26.09.0",
+            "manifest_digest": "sha256:feedd2ad0a90496003ab3c9908dbe5861da626a714ae7bf39a7d4555ca3dc54d",
+            "repo_digests": [
+              "ghcr.io/idaholab/malcolm/zeek@sha256:feedd2ad0a90496003ab3c9908dbe5861da626a714ae7bf39a7d4555ca3dc54d"
+            ],
+            "image_id": "sha256:0d2b82f456db9f566f3804b8d4947589ebad9d8e8606885f7a8a6b5a16643dc9",
+            "architecture": "amd64",
+            "os": "linux",
+            "layers": 27
+          }
+        }
+      }
+    },
+    "installer": {
+      "kind": "python-tooling",
+      "dockerfile": null,
+      "base_images": [],
+      "source_paths": [
+        "scripts/__init__.py",
+        "scripts/auth_setup",
+        "scripts/build.sh",
+        "scripts/check-filescan-output.py",
+        "scripts/configure",
+        "scripts/control.py",
+        "scripts/documentation_build.sh",
+        "scripts/field-globber.sh",
+        "scripts/github-download-counts/github_download_counts.py",
+        "scripts/github-download-counts/requirements.txt",
+        "scripts/github_image_helper.sh",
+        "scripts/ics-oui-parse.py",
+        "scripts/install.py",
+        "scripts/installer/__init__.py",
+        "scripts/installer/actions/shared.py",
+        "scripts/installer/args/__init__.py",
+        "scripts/installer/args/basic_args.py",
+        "scripts/installer/args/environment_args.py",
+        "scripts/installer/args/extras_args.py",
+        "scripts/installer/args/install_files_args.py",
+        "scripts/installer/args/orchestration_args.py",
+        "scripts/installer/args/presentation_args.py",
+        "scripts/installer/configs/__init__.py",
+        "scripts/installer/configs/configuration_items/__init__.py",
+        "scripts/installer/configs/configuration_items/analysis.py",
+        "scripts/installer/configs/configuration_items/capture.py",
+        "scripts/installer/configs/configuration_items/docker.py",
+        "scripts/installer/configs/configuration_items/file_carve.py",
+        "scripts/installer/configs/configuration_items/filebeat.py",
+        "scripts/installer/configs/configuration_items/logstash.py",
+        "scripts/installer/configs/configuration_items/netbox.py",
+        "scripts/installer/configs/configuration_items/network.py",
+        "scripts/installer/configs/configuration_items/open_ports.py",
+        "scripts/installer/configs/configuration_items/opensearch.py",
+        "scripts/installer/configs/configuration_items/runtime.py",
+        "scripts/installer/configs/configuration_items/storage.py",
+        "scripts/installer/configs/configuration_items/zeek_intel.py",
+        "scripts/installer/configs/constants/__init__.py",
+        "scripts/installer/configs/constants/config_env_var_keys.py",
+        "scripts/installer/configs/constants/configuration_item_keys.py",
+        "scripts/installer/configs/constants/constants.py",
+        "scripts/installer/configs/constants/enums.py",
+        "scripts/installer/configs/constants/installation_item_keys.py",
+        "scripts/installer/configs/installation_items/__init__.py",
+        "scripts/installer/configs/installation_items/linux.py",
+        "scripts/installer/configs/installation_items/macos.py",
+        "scripts/installer/configs/installation_items/shared.py",
+        "scripts/installer/configs/installation_items/windows.py",
+        "scripts/installer/core/__init__.py",
+        "scripts/installer/core/config_env_mapper.py",
+        "scripts/installer/core/config_item.py",
+        "scripts/installer/core/dependencies.py",
+        "scripts/installer/core/dependency_manager.py",
+        "scripts/installer/core/install_context.py",
+        "scripts/installer/core/item_store.py",
+        "scripts/installer/core/malcolm_config.py",
+        "scripts/installer/core/observable.py",
+        "scripts/installer/core/transform_registry.py",
+        "scripts/installer/core/tweak_registry.py",
+        "scripts/installer/core/validation.py",
+        "scripts/installer/core/visibility.py",
+        "scripts/installer/platforms/__init__.py",
+        "scripts/installer/platforms/base.py",
+        "scripts/installer/platforms/linux.py",
+        "scripts/installer/platforms/macos.py",
+        "scripts/installer/platforms/utils/linux_tweaks.py",
+        "scripts/installer/platforms/windows.py",
+        "scripts/installer/requirements.txt",
+        "scripts/installer/tests/README.md",
+        "scripts/installer/tests/__init__.py",
+        "scripts/installer/tests/mock/__init__.py",
+        "scripts/installer/tests/mock/run_mock_tests.py",
+        "scripts/installer/tests/mock/test_docker_compose_integration.py",
+        "scripts/installer/tests/mock/test_framework.py",
+        "scripts/installer/tests/mock/test_shared_actions.py",
+        "scripts/installer/tests/run_tests.py",
+        "scripts/installer/tests/unit/__init__.py",
+        "scripts/installer/tests/unit/run_unit_tests.py",
+        "scripts/installer/tests/unit/test_config_file_roundtrip.py",
+        "scripts/installer/tests/unit/test_env_derived_noop.py",
+        "scripts/installer/tests/unit/test_env_file_import_existing.py",
+        "scripts/installer/tests/unit/test_env_full_roundtrip.py",
+        "scripts/installer/tests/unit/test_env_multiconditional.py",
+        "scripts/installer/tests/unit/test_env_reverse_precedence.py",
+        "scripts/installer/tests/unit/test_env_sentinels.py",
+        "scripts/installer/tests/unit/test_extra_env_settings.py",
+        "scripts/installer/tests/unit/test_file_utils_detection.py",
+        "scripts/installer/tests/unit/test_install_context_roundtrip.py",
+        "scripts/installer/tests/unit/test_install_visibility_helper.py",
+        "scripts/installer/tests/unit/test_malcolm_config_core.py",
+        "scripts/installer/tests/unit/test_traefik_labels.py",
+        "scripts/installer/tests/unit/test_transform_registry_normalization.py",
+        "scripts/installer/tests/unit/test_ui_parity_driven_prompts.py",
+        "scripts/installer/tests/unit/test_validation_required.py",
+        "scripts/installer/tests/unit/test_value_dependencies.py",
+        "scripts/installer/tools/README.md",
+        "scripts/installer/tools/__init__.py",
+        "scripts/installer/tools/dump_env_mapping.py",
+        "scripts/installer/ui/__init__.py",
+        "scripts/installer/ui/dui/__init__.py",
+        "scripts/installer/ui/dui/dialog_configuration_menu.py",
+        "scripts/installer/ui/dui/dialog_installation_menu.py",
+        "scripts/installer/ui/dui/dui_installer_ui.py",
+        "scripts/installer/ui/gui/__init__.py",
+        "scripts/installer/ui/gui/components/__init__.py",
+        "scripts/installer/ui/gui/components/button.py",
+        "scripts/installer/ui/gui/components/controlled_checkbox.py",
+        "scripts/installer/ui/gui/components/controlled_entry.py",
+        "scripts/installer/ui/gui/components/dialog.py",
+        "scripts/installer/ui/gui/components/disableable_panel.py",
+        "scripts/installer/ui/gui/components/fading_label.py",
+        "scripts/installer/ui/gui/components/font_manager.py",
+        "scripts/installer/ui/gui/components/frame.py",
+        "scripts/installer/ui/gui/components/input.py",
+        "scripts/installer/ui/gui/components/input_field.py",
+        "scripts/installer/ui/gui/components/label.py",
+        "scripts/installer/ui/gui/components/labeled_input.py",
+        "scripts/installer/ui/gui/components/scrollable_frame.py",
+        "scripts/installer/ui/gui/components/styles.py",
+        "scripts/installer/ui/gui/controllers/__init__.py",
+        "scripts/installer/ui/gui/controllers/analysis_controller.py",
+        "scripts/installer/ui/gui/controllers/auth_controller.py",
+        "scripts/installer/ui/gui/controllers/base_controller.py",
+        "scripts/installer/ui/gui/controllers/installation_controller.py",
+        "scripts/installer/ui/gui/controllers/network_controller.py",
+        "scripts/installer/ui/gui/controllers/system_controller.py",
+        "scripts/installer/ui/gui/controllers/welcome_controller.py",
+        "scripts/installer/ui/gui/views/__init__.py",
+        "scripts/installer/ui/gui/views/analysis_view.py",
+        "scripts/installer/ui/gui/views/auth_view.py",
+        "scripts/installer/ui/gui/views/base_view.py",
+        "scripts/installer/ui/gui/views/installation_view.py",
+        "scripts/installer/ui/gui/views/network_view.py",
+        "scripts/installer/ui/gui/views/system_view.py",
+        "scripts/installer/ui/gui/views/welcome_view.py",
+        "scripts/installer/ui/shared/__init__.py",
+        "scripts/installer/ui/shared/installer_ui.py",
+        "scripts/installer/ui/shared/labels.py",
+        "scripts/installer/ui/shared/menu_builder.py",
+        "scripts/installer/ui/shared/prompt_utils.py",
+        "scripts/installer/ui/shared/search_utils.py",
+        "scripts/installer/ui/shared/splash_screen.py",
+        "scripts/installer/ui/shared/store_view_model.py",
+        "scripts/installer/ui/tui/__init__.py",
+        "scripts/installer/ui/tui/base_menu.py",
+        "scripts/installer/ui/tui/configuration_menu.py",
+        "scripts/installer/ui/tui/installation_menu.py",
+        "scripts/installer/ui/tui/tui_installer_ui.py",
+        "scripts/installer/utils/__init__.py",
+        "scripts/installer/utils/artifact_utils.py",
+        "scripts/installer/utils/custom_transforms.py",
+        "scripts/installer/utils/debug_utils.py",
+        "scripts/installer/utils/env_file_utils.py",
+        "scripts/installer/utils/exceptions.py",
+        "scripts/installer/utils/file_utils.py",
+        "scripts/installer/utils/logger_utils.py",
+        "scripts/installer/utils/settings_file_handler.py",
+        "scripts/installer/utils/summary_utils.py",
+        "scripts/installer/utils/tweak_utils.py",
+        "scripts/iron-bank/README.md",
+        "scripts/iron-bank/bump-iron-bank-hardening-manifest.sh",
+        "scripts/iron-bank/deduplicate-vat-findings.py",
+        "scripts/iron-bank/gitlab-artifacts-download/.envrc.example",
+        "scripts/iron-bank/gitlab-artifacts-download/.gitignore",
+        "scripts/iron-bank/gitlab-artifacts-download/gitlab-artifacts-download.py",
+        "scripts/iron-bank/malcolm-iron-bank-merge-requests.sh",
+        "scripts/iron-bank/vat-watch-clippy.sh",
+        "scripts/logs",
+        "scripts/malcolm-source-zip.sh",
+        "scripts/malcolm_appliance_packager.sh",
+        "scripts/malcolm_common.py",
+        "scripts/malcolm_constants.py",
+        "scripts/malcolm_kubernetes.py",
+        "scripts/malcolm_utils.py",
+        "scripts/netbox-backup",
+        "scripts/netbox-restore",
+        "scripts/package_zeek_logs.sh",
+        "scripts/release_cleaver.ps1",
+        "scripts/release_cleaver.sh",
+        "scripts/reset_and_auto_populate.sh",
+        "scripts/restart",
+        "scripts/safe-extract.py",
+        "scripts/start",
+        "scripts/status",
+        "scripts/stop",
+        "scripts/tx-rx-secure.sh",
+        "scripts/wipe",
+        "scripts/zeek_script_to_malcolm_boilerplate.py"
+      ],
+      "views": {
+        "source": {
+          "cyclonedx": "source/installer.cdx.json",
+          "spdx": "source/installer.spdx.json",
+          "osv": "osv/source/installer.osv.json",
+          "components": 8,
+          "components_by_type": {
+            "library": 8
+          },
+          "components_without_purl": 0,
+          "components_without_license": 8,
+          "osv_vulnerabilities": 6,
+          "osv_cves": 3,
+          "osv_by_severity": {
+            "medium": 6
+          },
+          "bom_serial": "urn:uuid:2fa39e26-9def-4d87-80fe-32d51c6d48d3",
+          "bom_timestamp": "2026-11-05T21:06:52Z"
+        },
+        "built": {
+          "cyclonedx": "built/installer.cdx.json",
+          "spdx": "built/installer.spdx.json",
+          "osv": "osv/built/installer.osv.json",
+          "components": 36,
+          "components_by_type": {
+            "application": 14,
+            "library": 22
+          },
+          "components_without_purl": 14,
+          "components_without_license": 15,
+          "osv_vulnerabilities": 0,
+          "osv_cves": 0,
+          "osv_by_severity": {},
+          "bom_serial": "urn:uuid:7e3a9d08-c61a-4b0d-9aa6-ffd0ce8aa03d",
+          "bom_timestamp": "2026-11-05T21:06:59Z",
+          "resolved_environment": {
+            "requirements": "scripts/installer/requirements.txt",
+            "resolved": "built/installer.requirements-resolved.txt",
+            "python": "Python 3.10.12"
+          }
+        }
+      }
+    }
+  }
+}
