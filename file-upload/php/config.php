@@ -1,5 +1,8 @@
 <?php
 
+// reject cross-site browser requests before any handler runs (see same_origin.php)
+require_once(__DIR__ . '/same_origin.php');
+
 // where to get files from
 const ENTRY_FIELD = array('filepond');
 
