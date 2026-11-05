@@ -1,0 +1,160 @@
+{
+  "results": [
+    {
+      "source": {
+        "path": "/tmp/tmp.A2H1xZtYIU/osv-input-valkey.cdx.json",
+        "type": "sbom"
+      },
+      "packages": [
+        {
+          "package": {
+            "name": "zlib",
+            "version": "1.3.2-r0",
+            "ecosystem": "Alpine:v3.24",
+            "purl": "pkg:apk/alpine/zlib@1.3.2-r0?arch=x86_64\u0026distro=alpine-3.24.2"
+          },
+          "groups": [
+            {
+              "ids": [
+                "ALPINE-CVE-2026-85091"
+              ],
+              "aliases": [
+                "ALPINE-CVE-2026-85091",
+                "CVE-2026-85091"
+              ],
+              "max_severity": "8.3"
+            }
+          ],
+          "vulnerabilities": [
+            {
+              "affected": [
+                {
+                  "database_specific": {
+                    "source": "https://storage.googleapis.com/cve-osv-conversion/alpine/ALPINE-CVE-2026-85091.json"
+                  },
+                  "ecosystem_specific": {},
+                  "package": {
+                    "ecosystem": "Alpine:v3.21",
+                    "name": "zlib",
+                    "purl": "pkg:apk/alpine/zlib?arch=source"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "0"
+                        },
+                        {
+                          "fixed": "1.3.2-r1"
+                        }
+                      ],
+                      "type": "ECOSYSTEM"
+                    }
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://storage.googleapis.com/cve-osv-conversion/alpine/ALPINE-CVE-2026-85091.json"
+                  },
+                  "ecosystem_specific": {},
+                  "package": {
+                    "ecosystem": "Alpine:v3.22",
+                    "name": "zlib",
+                    "purl": "pkg:apk/alpine/zlib?arch=source"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "0"
+                        },
+                        {
+                          "fixed": "1.3.2-r1"
+                        }
+                      ],
+                      "type": "ECOSYSTEM"
+                    }
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://storage.googleapis.com/cve-osv-conversion/alpine/ALPINE-CVE-2026-85091.json"
+                  },
+                  "ecosystem_specific": {},
+                  "package": {
+                    "ecosystem": "Alpine:v3.23",
+                    "name": "zlib",
+                    "purl": "pkg:apk/alpine/zlib?arch=source"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "0"
+                        },
+                        {
+                          "fixed": "1.3.2-r1"
+                        }
+                      ],
+                      "type": "ECOSYSTEM"
+                    }
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://storage.googleapis.com/cve-osv-conversion/alpine/ALPINE-CVE-2026-85091.json"
+                  },
+                  "ecosystem_specific": {},
+                  "package": {
+                    "ecosystem": "Alpine:v3.24",
+                    "name": "zlib",
+                    "purl": "pkg:apk/alpine/zlib?arch=source"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "0"
+                        },
+                        {
+                          "fixed": "1.3.2-r1"
+                        }
+                      ],
+                      "type": "ECOSYSTEM"
+                    }
+                  ]
+                }
+              ],
+              "details": "zlib versions 1.3.1.2 through 1.3.2 contain a heap buffer overflow vulnerability in the gz_vacate() function when processing non-blocking gzwrite() operations with stale external buffer pointers. Attackers can trigger the overflow by calling gzprintf() or gzvprintf() after a write stall, causing an unchecked memmove() to write beyond the internal input buffer boundary.",
+              "id": "ALPINE-CVE-2026-85091",
+              "modified": "2026-10-06T21:30:02.437029614Z",
+              "published": "2026-09-03T13:06:20.573Z",
+              "references": [
+                {
+                  "type": "ADVISORY",
+                  "url": "https://security.alpinelinux.org/vuln/CVE-2026-85091"
+                }
+              ],
+              "schema_version": "1.9.0",
+              "severity": [
+                {
+                  "score": "CVSS:4.0/AV:N/AC:H/AT:N/PR:N/UI:N/VC:N/VI:H/VA:H/SC:N/SI:N/SA:N/E:X/CR:X/IR:X/AR:X/MAV:X/MAC:X/MAT:X/MPR:X/MUI:X/MVC:X/MVI:X/MVA:X/MSC:X/MSI:X/MSA:X/S:X/AU:X/R:X/V:X/RE:X/U:X",
+                  "type": "CVSS_V4"
+                }
+              ],
+              "upstream": [
+                "CVE-2026-85091"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "experimental_config": {
+    "licenses": {
+      "summary": false,
+      "allowlist": null
+    }
+  }
+}
