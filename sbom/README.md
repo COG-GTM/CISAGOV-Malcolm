@@ -12,7 +12,7 @@ they were produced is in [`provenance.json`](provenance.json).
 
 | Deployable | Source view scans | Built view scans |
 |---|---|---|
-| one entry per `Dockerfiles/<name>.Dockerfile` (23) | the repository files that Dockerfile `ADD`s/`COPY`s into the image, plus the Dockerfile itself | the published image `ghcr.io/idaholab/malcolm/<name>:<version>` (`linux/amd64`), read straight from GHCR; nothing is built locally and Docker Hub is not contacted |
+| one entry per `Dockerfiles/<name>.Dockerfile` (24) | the repository files that Dockerfile `ADD`s/`COPY`s into the image, plus the Dockerfile itself | the published image `ghcr.io/idaholab/malcolm/<name>:<version>` (`linux/amd64`), read straight from GHCR; nothing is built locally and Docker Hub is not contacted |
 | `installer` | `scripts/` (`install.py`, `configure`, `control.py`, `scripts/installer/`, shared `malcolm_*.py`) | a fresh `pip` environment resolved from `scripts/installer/requirements.txt`; the exact pins are in `built/installer.requirements-resolved.txt` |
 
 Image names differ from Dockerfile names in three cases: `filebeat` → `filebeat-oss`,
