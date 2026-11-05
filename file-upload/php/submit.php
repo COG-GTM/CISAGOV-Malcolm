@@ -1,8 +1,5 @@
 <?php
 
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST');
-
 require_once('FilePond.class.php');
 
 require_once('config.php');
@@ -12,7 +9,6 @@ FilePond\catch_server_exceptions();
 
 FilePond\route_form_post(ENTRY_FIELD, [
     'FILE_OBJECTS' => 'handle_file_post',
-    'BASE64_ENCODED_FILE_OBJECTS' => 'handle_base64_encoded_file_post',
     'TRANSFER_IDS' => 'handle_transfer_ids_post'
 ]);
 
@@ -79,35 +75,6 @@ function handle_file_post($files) {
     foreach ($files as $file) {
         move_file_prefixed($file, UPLOAD_DIR, $new_name_prefix);
     }
-}
-
-function handle_base64_encoded_file_post($files) {
-
-    foreach ($files as $file) {
-
-        // Suppress error messages, we'll assume these file objects are valid
-        /* Expected format:
-        {
-            "id": "iuhv2cpsu",
-            "name": "picture.jpg",
-            "type": "image/jpeg",
-            "size": 20636,
-            "metadata" : {...}
-            "data": "/9j/4AAQSkZJRgABAQEASABIAA..."
-        }
-        */
-        $file = @json_decode($file);
-        if (!is_object($file)) continue;
-
-        $safe_name = sanitize_tagged_filename(FilePond\sanitize_filename($file->name));
-
-        FilePond\write_file(
-            UPLOAD_DIR,
-            base64_decode($file->data),
-            $safe_name
-        );
-    }
-
 }
 
 function handle_transfer_ids_post($ids) {
