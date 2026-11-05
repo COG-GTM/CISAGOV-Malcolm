@@ -144,13 +144,18 @@ def main():
             for c in comps:
                 by_type[c.get('type', '?')] = by_type.get(c.get('type', '?'), 0) + 1
                 lics = component_licenses(c)
-                lic_rows.append({
-                    'view': view, 'deployable': dep, 'type': c.get('type', ''),
-                    'name': c.get('name', ''), 'version': c.get('version', ''),
-                    'purl': c.get('purl', ''),
-                    'licenses': ' AND '.join(lics) if len(lics) > 1 else (lics[0] if lics else ''),
-                    'copyleft': copyleft_flag(' '.join(lics)),
-                })
+                lic_rows.append(
+                    {
+                        'view': view,
+                        'deployable': dep,
+                        'type': c.get('type', ''),
+                        'name': c.get('name', ''),
+                        'version': c.get('version', ''),
+                        'purl': c.get('purl', ''),
+                        'licenses': ' AND '.join(lics) if len(lics) > 1 else (lics[0] if lics else ''),
+                        'copyleft': copyleft_flag(' '.join(lics)),
+                    }
+                )
             no_purl = sum(1 for c in comps if not c.get('purl'))
             unlicensed = sum(1 for c in comps if not component_licenses(c))
 
@@ -183,15 +188,22 @@ def main():
                             cves.update(aliases)
                             b = severity_bucket(score)
                             buckets[b] = buckets.get(b, 0) + 1
-                            vuln_rows.append({
-                                'view': view, 'deployable': dep,
-                                'ecosystem': p.get('ecosystem', ''), 'package': p.get('name', ''),
-                                'version': p.get('version', ''), 'vuln_id': vid,
-                                'cve_ids': ' '.join(aliases), 'max_severity': group_sev.get(vid) or '',
-                                'severity_bucket': b, 'cvss': cvss,
-                                'fixed_versions': ' '.join(fixed_versions(v, p)),
-                                'summary': (v.get('summary') or '').replace('\n', ' ').strip(),
-                            })
+                            vuln_rows.append(
+                                {
+                                    'view': view,
+                                    'deployable': dep,
+                                    'ecosystem': p.get('ecosystem', ''),
+                                    'package': p.get('name', ''),
+                                    'version': p.get('version', ''),
+                                    'vuln_id': vid,
+                                    'cve_ids': ' '.join(aliases),
+                                    'max_severity': group_sev.get(vid) or '',
+                                    'severity_bucket': b,
+                                    'cvss': cvss,
+                                    'fixed_versions': ' '.join(fixed_versions(v, p)),
+                                    'summary': (v.get('summary') or '').replace('\n', ' ').strip(),
+                                }
+                            )
 
             view_entry = {
                 'cyclonedx': f'{view}/{dep}.cdx.json',
@@ -235,14 +247,30 @@ def main():
         deployables[dep] = entry
 
     with open(os.path.join(out, 'vulns.csv'), 'w', newline='', encoding='utf-8') as f:
-        w = csv.DictWriter(f, fieldnames=['view', 'deployable', 'ecosystem', 'package', 'version', 'vuln_id',
-                                          'cve_ids', 'max_severity', 'severity_bucket', 'cvss', 'fixed_versions',
-                                          'summary'])
+        w = csv.DictWriter(
+            f,
+            fieldnames=[
+                'view',
+                'deployable',
+                'ecosystem',
+                'package',
+                'version',
+                'vuln_id',
+                'cve_ids',
+                'max_severity',
+                'severity_bucket',
+                'cvss',
+                'fixed_versions',
+                'summary',
+            ],
+        )
         w.writeheader()
         w.writerows(sorted(vuln_rows, key=lambda r: (r['view'], r['deployable'], r['package'], r['vuln_id'])))
 
     with open(os.path.join(out, 'licenses.csv'), 'w', newline='', encoding='utf-8') as f:
-        w = csv.DictWriter(f, fieldnames=['view', 'deployable', 'type', 'name', 'version', 'purl', 'licenses', 'copyleft'])
+        w = csv.DictWriter(
+            f, fieldnames=['view', 'deployable', 'type', 'name', 'version', 'purl', 'licenses', 'copyleft']
+        )
         w.writeheader()
         w.writerows(sorted(lic_rows, key=lambda r: (r['view'], r['deployable'], r['name'], r['version'])))
 
@@ -251,8 +279,10 @@ def main():
         'schema': 'malcolm-sbom-provenance/1',
         'generated_at': now,
         'generator': 'sbom/generate.sh',
-        'operator': os.environ.get('SBOM_OPERATOR') or os.environ.get('GITHUB_SERVER_URL', '') and
-                    f"{os.environ.get('GITHUB_SERVER_URL')}/{os.environ.get('GITHUB_REPOSITORY')}/actions/runs/{os.environ.get('GITHUB_RUN_ID')}" or '',
+        'operator': os.environ.get('SBOM_OPERATOR')
+        or os.environ.get('GITHUB_SERVER_URL', '')
+        and f"{os.environ.get('GITHUB_SERVER_URL')}/{os.environ.get('GITHUB_REPOSITORY')}/actions/runs/{os.environ.get('GITHUB_RUN_ID')}"
+        or '',
         'repository': {
             'remote': git('remote', 'get-url', 'origin'),
             'commit': git('rev-parse', 'HEAD'),
@@ -263,7 +293,8 @@ def main():
         'image_repo': opts.image_repo,
         'platform': opts.platform,
         'tools': {
-            'syft': run(['syft', 'version', '-o', 'json']) and json.loads(run(['syft', 'version', '-o', 'json'])).get('version'),
+            'syft': run(['syft', 'version', '-o', 'json'])
+            and json.loads(run(['syft', 'version', '-o', 'json'])).get('version'),
             'osv-scanner': (run(['osv-scanner', '--version']).splitlines() or [''])[0].split()[-1],
             'python': run([os.environ.get('PYTHON', 'python3'), '--version']),
         },
@@ -291,12 +322,14 @@ def main():
     for dep in opts.deployables:
         s = summary[dep].get('source', {})
         b = summary[dep].get('built', {})
-        digest = ((b.get('image') or {}).get('manifest_digest') or '')
+        digest = (b.get('image') or {}).get('manifest_digest') or ''
         digest = digest.replace('sha256:', '')[:12] if digest else ('pip venv' if b.get('resolved_environment') else '')
         sev = b.get('osv_by_severity', {})
         sevs = ' / '.join(str(sev.get(k, 0)) for k in ('critical', 'high', 'medium', 'low', 'unknown'))
-        lines.append(f'| {dep} | {s.get("components", "")} | {b.get("components", "")} | `{digest}` | '
-                     f'{s.get("osv_vulnerabilities", "")} | {b.get("osv_vulnerabilities", "")} | {sevs} |')
+        lines.append(
+            f'| {dep} | {s.get("components", "")} | {b.get("components", "")} | `{digest}` | '
+            f'{s.get("osv_vulnerabilities", "")} | {b.get("osv_vulnerabilities", "")} | {sevs} |'
+        )
         tot['src_c'] += s.get('components', 0)
         tot['blt_c'] += b.get('components', 0)
         tot['src_v'] += s.get('osv_vulnerabilities', 0)
@@ -307,16 +340,26 @@ def main():
         if r['view'] != 'built':
             continue
         for cve in r['cve_ids'].split():
-            all_cves.setdefault(cve, {'deployables': set(), 'packages': set(), 'sev': r['severity_bucket'], 'fix': r['fixed_versions']})
+            all_cves.setdefault(
+                cve, {'deployables': set(), 'packages': set(), 'sev': r['severity_bucket'], 'fix': r['fixed_versions']}
+            )
             all_cves[cve]['deployables'].add(r['deployable'])
             all_cves[cve]['packages'].add(f"{r['package']}@{r['version']}")
-    lines += ['', f'Distinct CVE identifiers across built views: {len(all_cves)}. '
-                  f'Rows in vulns.csv: {len(vuln_rows)}; rows in licenses.csv: {len(lic_rows)}.', '',
-              '## Most widespread CVEs (built views)', '',
-              '| CVE | Deployables | Packages | Severity | Fixed in |', '|---|---:|---|---|---|']
+    lines += [
+        '',
+        f'Distinct CVE identifiers across built views: {len(all_cves)}. '
+        f'Rows in vulns.csv: {len(vuln_rows)}; rows in licenses.csv: {len(lic_rows)}.',
+        '',
+        '## Most widespread CVEs (built views)',
+        '',
+        '| CVE | Deployables | Packages | Severity | Fixed in |',
+        '|---|---:|---|---|---|',
+    ]
     top = sorted(all_cves.items(), key=lambda kv: (-len(kv[1]['deployables']), kv[0]))[:15]
     for cve, info in top:
-        lines.append(f'| {cve} | {len(info["deployables"])} | {", ".join(sorted(info["packages"]))[:120]} | {info["sev"]} | {info["fix"] or "none listed"} |')
+        lines.append(
+            f'| {cve} | {len(info["deployables"])} | {", ".join(sorted(info["packages"]))[:120]} | {info["sev"]} | {info["fix"] or "none listed"} |'
+        )
 
     lines += ['', '## Data-quality notes', '']
     for dep in opts.deployables:

@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 """Post-process syft output so it validates and scans correctly.
 
-  normalize.py licenses <file.cdx.json> <file.spdx.json>
-      syft copies license identifiers from distro copyright files verbatim; a few
-      (e.g. "UnRAR", "SMAIL-GPL") are not SPDX identifiers and fail schema
-      validation. CycloneDX: move such ids from license.id to license.name.
-      SPDX: rewrite them as LicenseRef-<id> and declare them in
-      hasExtractedLicensingInfos. Nothing else is touched.
+normalize.py licenses <file.cdx.json> <file.spdx.json>
+    syft copies license identifiers from distro copyright files verbatim; a few
+    (e.g. "UnRAR", "SMAIL-GPL") are not SPDX identifiers and fail schema
+    validation. CycloneDX: move such ids from license.id to license.name.
+    SPDX: rewrite them as LicenseRef-<id> and declare them in
+    hasExtractedLicensingInfos. Nothing else is touched.
 
-  normalize.py osv-input <file.cdx.json> <out.cdx.json>
-      Write a copy for osv-scanner with the Go standard library version
-      "go1.23.3" written as "1.23.3". osv-scanner cannot parse the "go" prefix
-      syft uses and otherwise reports every historical stdlib advisory as
-      affecting the image. The committed SBOMs keep syft's spelling.
+normalize.py osv-input <file.cdx.json> <out.cdx.json>
+    Write a copy for osv-scanner with the Go standard library version
+    "go1.23.3" written as "1.23.3". osv-scanner cannot parse the "go" prefix
+    syft uses and otherwise reports every historical stdlib advisory as
+    affecting the image. The committed SBOMs keep syft's spelling.
 """
+
 import json
 import os
 import re
@@ -105,8 +106,14 @@ def fix_spdx(path):
         for tok in sorted(unknown):
             ref = license_ref(tok)
             if ref not in have:
-                infos.append({'licenseId': ref, 'extractedText': 'NOASSERTION', 'name': tok,
-                              'comment': 'identifier as recorded by syft; not on the SPDX license list'})
+                infos.append(
+                    {
+                        'licenseId': ref,
+                        'extractedText': 'NOASSERTION',
+                        'name': tok,
+                        'comment': 'identifier as recorded by syft; not on the SPDX license list',
+                    }
+                )
         dump(doc, path)
     return unknown
 
@@ -119,7 +126,11 @@ def osv_input(src, dst):
     n = 0
     for comp in walk_components(doc):
         v = comp.get('version') or ''
-        if comp.get('name') == 'stdlib' and (comp.get('purl') or '').startswith('pkg:golang/stdlib') and GO_STDLIB.match(v):
+        if (
+            comp.get('name') == 'stdlib'
+            and (comp.get('purl') or '').startswith('pkg:golang/stdlib')
+            and GO_STDLIB.match(v)
+        ):
             comp['version'] = GO_STDLIB.sub(r'\1', v)
             comp['purl'] = comp['purl'].replace('@' + v, '@' + comp['version'], 1)
             n += 1
