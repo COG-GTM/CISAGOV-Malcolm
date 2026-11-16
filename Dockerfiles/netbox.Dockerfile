@@ -1,4 +1,4 @@
-FROM netboxcommunity/netbox:v4.6.10
+FROM netboxcommunity/netbox:v4.7.4
 
 # Copyright (c) 2026 Battelle Energy Alliance, LLC.  All rights reserved.
 LABEL maintainer="malcolm@inl.gov"
@@ -25,9 +25,9 @@ ENV PGROUP="ubuntu"
 ENV PUSER_PRIV_DROP=true
 USER root
 
-ENV NETBOX_INITIALIZERS_VERSION="v4.6.2"
-ENV NETBOX_TOPOLOGY_VERSION="4.5.1"
-ENV NETBOX_HEALTHCHECK_VERSION="0.3.0"
+ENV NETBOX_INITIALIZERS_VERSION="v4.7.0"
+ENV NETBOX_TOPOLOGY_VERSION="4.7.0"
+ENV NETBOX_HEALTHCHECK_VERSION="0.4.0"
 
 ENV YQ_VERSION="4.54.1"
 ENV YQ_URL="https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_linux_"
